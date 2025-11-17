@@ -1,0 +1,7 @@
+data_references/
+__pycache__/
+
+.venv/
+.vscode/
+.vscode-ctags
+.coverage
