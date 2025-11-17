@@ -14,7 +14,8 @@ load-plugins=pylint.extensions.check_elif,
              pylint.extensions.comparison_placement
 
 [MESSAGES CONTROL]
-disable=line-too-long
+
+disable=
 
 [BASIC]
 
