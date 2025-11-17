@@ -1,6 +1,7 @@
 data_references/
 __pycache__/
 
+.pytest_cache/
 .venv/
 .vscode/
 .vscode-ctags
