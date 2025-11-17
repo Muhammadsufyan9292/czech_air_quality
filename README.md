@@ -1,4 +1,4 @@
-# czech-air-quality
+# czech_air_quality
 This library provides a python client for simply retrieving and processing air quality data from the CHMI `OpenData` portal, that provides data hourly.
 
 It also contains the optional logic for automatically picking closest weather station to a location via `Nominatim`, automatically fetching multiple close stations to get measurements of all pollutants, fallback mechanisms, caching, and a `EAQI` calculation
@@ -18,7 +18,7 @@ It also contains the optional logic for automatically picking closest weather st
 ## Installation
 
 ```bash
-pip install czech-air-quality
+pip install czech_air_quality
 ```
 
 **Requirements:**
@@ -456,7 +456,7 @@ Base exception for the library, all exceptions inherit from this.
 
 ```python
 class AirQualityError(Exception):
-    """Base exception for the czech-air-quality library."""
+    """Base exception for the czech_air_quality library."""
 ```
 
 ### DataDownloadError

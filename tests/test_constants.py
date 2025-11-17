@@ -74,7 +74,7 @@ class TestUserAgent(unittest.TestCase):
 
     def test_user_agent_contains_library_name(self):
         """Test that USER_AGENT includes library name."""
-        self.assertIn("czech-air-quality", USER_AGENT)
+        self.assertIn("czech_air_quality", USER_AGENT)
 
     def test_user_agent_contains_version(self):
         """Test that USER_AGENT includes version number."""

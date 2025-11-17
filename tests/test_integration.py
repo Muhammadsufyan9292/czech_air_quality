@@ -13,7 +13,7 @@
 #  GNU Lesser General Public License for more details.
 
 """
-Integration tests for the czech-air-quality library.
+Integration tests for the czech_air_quality library.
 """
 
 import unittest

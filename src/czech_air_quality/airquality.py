@@ -44,7 +44,7 @@ def _ensure_loaded(func):
 
 
 class AirQualityError(Exception):
-    """Base exception for the czech-air-quality library."""
+    """Base exception for the czech_air_quality library."""
 
 class DataDownloadError(AirQualityError):
     """Raised when data cannot be downloaded or is invalid."""

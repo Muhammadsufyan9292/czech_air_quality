@@ -13,7 +13,7 @@
 #  GNU Lesser General Public License for more details.
 
 """
-Test runner script for czech-air-quality library.
+Test runner script for czech_air_quality library.
 """
 
 import sys
@@ -77,7 +77,7 @@ def run_tests(test_module: str | None = None, verbosity: int = 2, coverage: bool
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Run tests for czech-air-quality library",
+        description="Run tests for czech_air_quality library",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

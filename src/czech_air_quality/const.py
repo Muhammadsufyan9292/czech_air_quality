@@ -21,7 +21,7 @@ from . import __version__
 AQ_DATA_URL  = "https://opendata.chmi.cz/air_quality/now/data/airquality_1h_avg_CZ.csv"
 METADATA_URL = "https://opendata.chmi.cz/air_quality/now/metadata/metadata.json"
 
-USER_AGENT = f"python-czech-air-quality/{__version__}"
+USER_AGENT = f"python-czech_air_quality/{__version__}"
 NOMINATIM_TIMEOUT = 10
 REQUEST_TIMEOUT = 20
 
