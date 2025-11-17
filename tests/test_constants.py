@@ -19,8 +19,10 @@ Unit tests for constants and configuration values.
 import unittest
 from urllib.parse import urlparse
 
-import src.const
-from src import __version__
+# Discouraged, but let's do it for the sake of readibility
+# pylint: disable=wildcard-import
+from src.czech_air_quality.const import *
+from src.czech_air_quality import __version__
 
 
 class TestURLConstants(unittest.TestCase):
@@ -28,19 +30,19 @@ class TestURLConstants(unittest.TestCase):
 
     def test_aq_data_url_is_valid(self):
         """Test that AQ_DATA_URL is a valid URL."""
-        result = urlparse(src.const.AQ_DATA_URL)
+        result = urlparse(AQ_DATA_URL)
         self.assertEqual(result.scheme, "https")
         self.assertIn("chmi.cz", result.netloc)
 
     def test_metadata_url_is_valid(self):
         """Test that METADATA_URL is a valid URL."""
-        result = urlparse(src.const.METADATA_URL)
+        result = urlparse(METADATA_URL)
         self.assertEqual(result.scheme, "https")
         self.assertIn("chmi.cz", result.netloc)
 
     def test_urls_are_different(self):
         """Test that AQ_DATA_URL and METADATA_URL are different."""
-        self.assertNotEqual(src.const.AQ_DATA_URL, src.const.METADATA_URL)
+        self.assertNotEqual(AQ_DATA_URL, METADATA_URL)
 
 
 class TestTimeoutConstants(unittest.TestCase):
@@ -48,23 +50,23 @@ class TestTimeoutConstants(unittest.TestCase):
 
     def test_nominatim_timeout_positive(self):
         """Test that NOMINATIM_TIMEOUT is positive."""
-        self.assertGreater(src.const.NOMINATIM_TIMEOUT, 0)
+        self.assertGreater(NOMINATIM_TIMEOUT, 0)
 
     def test_request_timeout_positive(self):
         """Test that REQUEST_TIMEOUT is positive."""
-        self.assertGreater(src.const.REQUEST_TIMEOUT, 0)
+        self.assertGreater(REQUEST_TIMEOUT, 0)
 
     def test_nominatim_timeout_reasonable(self):
         """Test that NOMINATIM_TIMEOUT is reasonable (not excessive)."""
-        self.assertLess(src.const.NOMINATIM_TIMEOUT, 60)
+        self.assertLess(NOMINATIM_TIMEOUT, 60)
 
     def test_request_timeout_reasonable(self):
         """Test that REQUEST_TIMEOUT is reasonable (not excessive)."""
-        self.assertLess(src.const.REQUEST_TIMEOUT, 120)
+        self.assertLess(REQUEST_TIMEOUT, 120)
 
     def test_request_timeout_greater_than_nominatim(self):
         """Test that REQUEST_TIMEOUT >= NOMINATIM_TIMEOUT."""
-        self.assertGreaterEqual(src.const.REQUEST_TIMEOUT, src.const.NOMINATIM_TIMEOUT)
+        self.assertGreaterEqual(REQUEST_TIMEOUT, NOMINATIM_TIMEOUT)
 
 
 class TestUserAgent(unittest.TestCase):
@@ -72,15 +74,15 @@ class TestUserAgent(unittest.TestCase):
 
     def test_user_agent_contains_library_name(self):
         """Test that USER_AGENT includes library name."""
-        self.assertIn("czech-air-quality", src.const.USER_AGENT)
+        self.assertIn("czech-air-quality", USER_AGENT)
 
     def test_user_agent_contains_version(self):
         """Test that USER_AGENT includes version number."""
-        self.assertIn(__version__, src.const.USER_AGENT)
+        self.assertIn(__version__, USER_AGENT)
 
     def test_user_agent_format(self):
         """Test USER_AGENT has standard format."""
-        parts = src.const.USER_AGENT.split("/")
+        parts = USER_AGENT.split("/")
         self.assertEqual(len(parts), 2)
 
 
@@ -92,11 +94,11 @@ class TestEAQIBands(unittest.TestCase):
         required_pollutants = ["PM10", "PM2_5", "O3", "NO2", "SO2"]
 
         for pollutant in required_pollutants:
-            self.assertIn(pollutant, src.const.EAQI_BANDS)
+            self.assertIn(pollutant, EAQI_BANDS)
 
     def test_eaqi_bands_are_lists(self):
         """Test that EAQI_BANDS values are lists of tuples."""
-        for _, bands in src.const.EAQI_BANDS.items():
+        for _, bands in EAQI_BANDS.items():
             self.assertIsInstance(bands, list)
             self.assertGreater(len(bands), 0)
 
@@ -106,7 +108,7 @@ class TestEAQIBands(unittest.TestCase):
 
     def test_eaqi_bands_values_ascending(self):
         """Test that EAQI band concentration limits are ascending."""
-        for pollutant, bands in src.const.EAQI_BANDS.items():
+        for pollutant, bands in EAQI_BANDS.items():
             prev_concentration = -1
 
             for _, concentration in bands:
@@ -119,7 +121,7 @@ class TestEAQIBands(unittest.TestCase):
 
     def test_eaqi_bands_aqi_values_positive(self):
         """Test that EAQI AQI values are positive."""
-        for pollutant, bands in src.const.EAQI_BANDS.items():
+        for pollutant, bands in EAQI_BANDS.items():
             for aqi_value, _ in bands:
                 self.assertGreater(
                     aqi_value, 0, msg=f"{pollutant} has non-positive AQI value"
@@ -127,7 +129,7 @@ class TestEAQIBands(unittest.TestCase):
 
     def test_eaqi_bands_aqi_values_ascending(self):
         """Test that AQI values increase with concentration."""
-        for pollutant, bands in src.const.EAQI_BANDS.items():
+        for pollutant, bands in EAQI_BANDS.items():
             prev_aqi = 0
 
             for aqi_value, _ in bands:
@@ -138,13 +140,13 @@ class TestEAQIBands(unittest.TestCase):
 
     def test_pm10_bands_first_value(self):
         """Test PM10 specific band values (sanity check)."""
-        pm10_bands = src.const.EAQI_BANDS["PM10"]
+        pm10_bands = EAQI_BANDS["PM10"]
         # First band should be (20, 10)
         self.assertEqual(pm10_bands[0], (20, 10))
 
     def test_o3_bands_first_value(self):
         """Test O3 specific band values (sanity check)."""
-        o3_bands = src.const.EAQI_BANDS["O3"]
+        o3_bands = EAQI_BANDS["O3"]
         # First band should be (20, 60)
         self.assertEqual(o3_bands[0], (20, 60))
 
@@ -154,32 +156,32 @@ class TestEAQILevels(unittest.TestCase):
 
     def test_eaqi_levels_structure(self):
         """Test EAQI_LEVELS has proper structure."""
-        self.assertIsInstance(src.const.EAQI_LEVELS, dict)
-        self.assertGreater(len(src.const.EAQI_LEVELS), 0)
+        self.assertIsInstance(EAQI_LEVELS, dict)
+        self.assertGreater(len(EAQI_LEVELS), 0)
 
     def test_eaqi_levels_keys_are_numbers(self):
         """Test EAQI_LEVELS keys are numeric."""
-        for key in src.const.EAQI_LEVELS.keys():
+        for key in EAQI_LEVELS.keys():
             self.assertIsInstance(key, int)
 
     def test_eaqi_levels_values_are_strings(self):
         """Test EAQI_LEVELS values are strings."""
-        for value in src.const.EAQI_LEVELS.values():
+        for value in EAQI_LEVELS.values():
             self.assertIsInstance(value, str)
 
     def test_eaqi_levels_has_required_descriptions(self):
         """Test EAQI_LEVELS includes required descriptions."""
         required_descriptions = ["Good", "Fair", "Poor", "Very Poor"]
 
-        all_descriptions = list(src.const.EAQI_LEVELS.values())
+        all_descriptions = list(EAQI_LEVELS.values())
 
         for description in required_descriptions:
             self.assertIn(description, all_descriptions)
 
     def test_eaqi_levels_keys_ascending(self):
         """Test EAQI_LEVELS keys are in ascending order."""
-        keys = sorted(src.const.EAQI_LEVELS.keys())
-        self.assertEqual(keys, sorted(src.const.EAQI_LEVELS.keys()))
+        keys = sorted(EAQI_LEVELS.keys())
+        self.assertEqual(keys, sorted(EAQI_LEVELS.keys()))
 
 
 class TestCacheConstants(unittest.TestCase):
@@ -187,27 +189,27 @@ class TestCacheConstants(unittest.TestCase):
 
     def test_cache_file_name_not_empty(self):
         """Test CACHE_FILE_NAME is not empty."""
-        self.assertGreater(len(src.const.CACHE_FILE_NAME), 0)
+        self.assertGreater(len(CACHE_FILE_NAME), 0)
 
     def test_cache_file_name_has_extension(self):
         """Test CACHE_FILE_NAME has file extension."""
-        self.assertTrue(src.const.CACHE_FILE_NAME.endswith(".json"))
+        self.assertTrue(CACHE_FILE_NAME.endswith(".json"))
 
     def test_cache_metadata_key_not_empty(self):
         """Test CACHE_METADATA_KEY is not empty."""
-        self.assertGreater(len(src.const.CACHE_METADATA_KEY), 0)
+        self.assertGreater(len(CACHE_METADATA_KEY), 0)
 
     def test_etag_urls_structure(self):
         """Test ETAG_URLS has required keys."""
         required_keys = ["aq_data_etag", "metadata_etag"]
 
         for key in required_keys:
-            self.assertIn(key, src.const.ETAG_URLS)
+            self.assertIn(key, ETAG_URLS)
 
     def test_etag_urls_point_to_data_urls(self):
         """Test ETAG_URLS values match data URLs."""
-        self.assertEqual(src.const.ETAG_URLS["aq_data_etag"], src.const.AQ_DATA_URL)
-        self.assertEqual(src.const.ETAG_URLS["metadata_etag"], src.const.METADATA_URL)
+        self.assertEqual(ETAG_URLS["aq_data_etag"], AQ_DATA_URL)
+        self.assertEqual(ETAG_URLS["metadata_etag"], METADATA_URL)
 
 
 class TestMiscConstants(unittest.TestCase):
@@ -215,23 +217,23 @@ class TestMiscConstants(unittest.TestCase):
 
     def test_chmi_error_threshold(self):
         """Test CHMI_ERROR_THRESHOLD is defined."""
-        self.assertIsNotNone(src.const.CHMI_ERROR_THRESHOLD)
+        self.assertIsNotNone(CHMI_ERROR_THRESHOLD)
 
     def test_max_fallback_stations_positive(self):
         """Test MAX_FALLBACK_STATIONS is positive."""
-        self.assertGreater(src.const.MAX_FALLBACK_STATIONS, 0)
+        self.assertGreater(MAX_FALLBACK_STATIONS, 0)
 
     def test_max_fallback_stations_reasonable(self):
         """Test MAX_FALLBACK_STATIONS is reasonable."""
-        self.assertLess(src.const.MAX_FALLBACK_STATIONS, 20)
+        self.assertLess(MAX_FALLBACK_STATIONS, 20)
 
     def test_timestamp_key_not_empty(self):
         """Test TIMESTAMP_KEY is not empty."""
-        self.assertGreater(len(src.const.TIMESTAMP_KEY), 0)
+        self.assertGreater(len(TIMESTAMP_KEY), 0)
 
     def test_etags_key_not_empty(self):
         """Test ETAGS_KEY is not empty."""
-        self.assertGreater(len(src.const.ETAGS_KEY), 0)
+        self.assertGreater(len(ETAGS_KEY), 0)
 
 
 if __name__ == "__main__":

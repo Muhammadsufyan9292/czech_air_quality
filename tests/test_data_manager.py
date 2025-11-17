@@ -20,14 +20,14 @@ import unittest
 from unittest.mock import Mock, patch
 from datetime import datetime
 
-from src.data_manager import DataManager
-import src.const
+from src.czech_air_quality.data_manager import DataManager
+from src.czech_air_quality.const import CACHE_FILE_NAME
 
 
 class TestDataManagerInitialization(unittest.TestCase):
     """Test DataManager initialization."""
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def test_init_default_caching_enabled(self, mock_get):
         """Test default initialization with caching enabled."""
         mock_get.return_value.status_code = 304
@@ -36,14 +36,14 @@ class TestDataManagerInitialization(unittest.TestCase):
 
         self.assertFalse(dm._disable_caching)
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def test_init_caching_disabled(self, _):
         """Test initialization with caching disabled."""
         dm = DataManager(disable_caching=True)
 
         self.assertTrue(dm._disable_caching)
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def test_init_custom_timeout(self, _):
         """Test initialization with custom request timeout."""
         dm = DataManager(request_timeout=30)
@@ -54,16 +54,16 @@ class TestDataManagerInitialization(unittest.TestCase):
 class TestDataManagerCaching(unittest.TestCase):
     """Test caching behavior."""
 
-    @patch("src.data_manager.requests.get")
-    @patch("src.data_manager.os.path.exists")
+    @patch("src.czech_air_quality.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.os.path.exists")
     def test_cache_file_location(self, mock_exists, _):
         """Test cache file is stored in correct location."""
         mock_exists.return_value = False
         dm = DataManager()
 
-        self.assertIn(src.const.CACHE_FILE_NAME, dm._cache_file_path)
+        self.assertIn(CACHE_FILE_NAME, dm._cache_file_path)
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def test_disable_caching_flag(self, _):
         """Test that disable_caching flag is respected."""
         dm = DataManager(disable_caching=True)
@@ -74,7 +74,7 @@ class TestDataManagerCaching(unittest.TestCase):
 class TestETagValidation(unittest.TestCase):
     """Test ETag-based conditional download validation."""
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def test_is_data_fresh_with_cache_304(self, mock_get):
         """Test is_data_fresh returns True when server returns 304 (not modified)."""
         mock_response = Mock()
@@ -88,7 +88,7 @@ class TestETagValidation(unittest.TestCase):
 
         self.assertIsInstance(result, bool)
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def test_is_data_fresh_without_etags(self, _):
         """Test is_data_fresh when no ETags are cached."""
         dm = DataManager()
@@ -102,7 +102,7 @@ class TestETagValidation(unittest.TestCase):
 class TestDataCombination(unittest.TestCase):
     """Test data manager functionality."""
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def setUp(self, _):
         """Set up test fixtures."""
         self.dm = DataManager()
@@ -119,7 +119,7 @@ class TestDataValidation(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        with patch("src.data_manager.requests.get"):
+        with patch("src.czech_air_quality.data_manager.requests.get"):
             self.dm = DataManager()
 
     def test_validate_metadata_valid_structure(self):
@@ -145,7 +145,7 @@ class TestDataValidation(unittest.TestCase):
 class TestRawDataProperties(unittest.TestCase):
     """Test properties that expose raw data."""
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def test_raw_data_json_property_none(self, _):
         """Test raw_data_json property when no data is loaded."""
         dm = DataManager()
@@ -153,7 +153,7 @@ class TestRawDataProperties(unittest.TestCase):
 
         self.assertTrue(result is None or result == {})
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def test_last_download_status(self, _):
         """Test last_download_status property."""
         dm = DataManager()
@@ -165,7 +165,7 @@ class TestRawDataProperties(unittest.TestCase):
 class TestActualizedTime(unittest.TestCase):
     """Test data actualization timestamp."""
 
-    @patch("src.data_manager.requests.get")
+    @patch("src.czech_air_quality.data_manager.requests.get")
     def test_actualized_time_type(self, _):
         """Test that actualized_time returns datetime object."""
         dm = DataManager()

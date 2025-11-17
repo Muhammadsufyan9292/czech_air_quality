@@ -25,12 +25,10 @@ import tempfile
 import logging
 import requests
 
-# Can't import DataDownloadError directly
-import src
-import src.const
-
+from . import const
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class DataManager:
     """
@@ -39,7 +37,7 @@ class DataManager:
     """
 
     def __init__(self, disable_caching: bool = False,
-            request_timeout: int = src.const.REQUEST_TIMEOUT):
+            request_timeout: int = const.REQUEST_TIMEOUT):
         """
         Initialize the DataManager.
 
@@ -56,7 +54,7 @@ class DataManager:
         self._disable_caching = disable_caching
         self._cache_file_path = os.path.join(
             tempfile.gettempdir(),
-            src.const.CACHE_FILE_NAME
+            const.CACHE_FILE_NAME
         )
 
 
@@ -95,7 +93,7 @@ class DataManager:
             self._download_data()
 
         if not self._raw_data_json:
-            raise src.DataDownloadError(
+            raise DataDownloadError(
                 "Could not retrieve any air quality data from download or cache."
             )
 
@@ -126,7 +124,7 @@ class DataManager:
         )
 
         try:
-            for etag_key, url in src.const.ETAG_URLS.items():
+            for etag_key, url in const.ETAG_URLS.items():
                 response = self._perform_conditional_download(url, etag_key)
 
                 if response.status_code == 200:
@@ -174,16 +172,16 @@ class DataManager:
             with open(self._cache_file_path, "r", encoding="utf-8") as file:
                 cache_data = json.load(file)
 
-            metadata    = cache_data.pop(src.const.CACHE_METADATA_KEY, {})
-            cache_time  = metadata.get(src.const.TIMESTAMP_KEY)
-            self._etags = metadata.get(src.const.ETAGS_KEY, {})
+            metadata    = cache_data.pop(const.CACHE_METADATA_KEY, {})
+            cache_time  = metadata.get(const.TIMESTAMP_KEY)
+            self._etags = metadata.get(const.ETAGS_KEY, {})
 
             if cache_time:
                 self._actualized_time = datetime.fromisoformat(cache_time)
             else:
                 return False
 
-            cache_data[src.const.CACHE_METADATA_KEY] = metadata
+            cache_data[const.CACHE_METADATA_KEY] = metadata
             self._raw_data_json = json.dumps(cache_data, ensure_ascii=False)
             self._last_download_status = f"""Loaded data from cache (pending ETag validation).
                 Updated at {self._actualized_time.strftime('%Y-%m-%d %H:%M')}"""
@@ -213,10 +211,10 @@ class DataManager:
         try:
             cache_data = json.loads(data_json_str)
             metadata = {
-                src.const.TIMESTAMP_KEY: datetime.now(timezone.utc).isoformat(),
-                src.const.ETAGS_KEY: self._etags,
+                const.TIMESTAMP_KEY: datetime.now(timezone.utc).isoformat(),
+                const.ETAGS_KEY: self._etags,
             }
-            cache_data[src.const.CACHE_METADATA_KEY] = metadata
+            cache_data[const.CACHE_METADATA_KEY] = metadata
 
             os.makedirs(
                 os.path.dirname(self._cache_file_path),
@@ -246,7 +244,7 @@ class DataManager:
         is_modified = False
 
         try:
-            for etag_key, url in src.const.ETAG_URLS.items():
+            for etag_key, url in const.ETAG_URLS.items():
                 response = self._perform_conditional_download(url, etag_key)
 
                 if response.status_code == 304:
@@ -275,7 +273,7 @@ class DataManager:
             aq_csv_str = download_results.get("aq_data_etag", {}).get("content")
 
             if metadata_data is None or aq_csv_str is None:
-                raise src.DataDownloadError(
+                raise DataDownloadError(
                     """Failed to download required data files. 
                     At least one file is missing or invalid."""
                 )
@@ -300,7 +298,7 @@ class DataManager:
             self._last_download_status = f"Download failed: {exc}"
 
             if not self._raw_data_json and not self._load_from_cache():
-                raise src.DataDownloadError(
+                raise DataDownloadError(
                     f"Failed to download and no cache data is available: {exc}"
                 ) from exc
 
@@ -312,7 +310,7 @@ class DataManager:
             )
 
             if not self._raw_data_json and not self._load_from_cache():
-                raise src.DataDownloadError(
+                raise DataDownloadError(
                     f"Downloaded data is invalid and no cache data is available: {exc}"
                 ) from exc
 
@@ -337,9 +335,9 @@ class DataManager:
         """
 
         if not isinstance(metadata_json, dict):
-            raise src.DataDownloadError("Metadata JSON is not a valid dictionary")
+            raise DataDownloadError("Metadata JSON is not a valid dictionary")
         if not isinstance(aq_csv_str, str):
-            raise src.DataDownloadError("AQ CSV data is not a valid string")
+            raise DataDownloadError("AQ CSV data is not a valid string")
 
         combined = {
             "Actualized": datetime.now(timezone.utc).isoformat(),
@@ -414,7 +412,7 @@ class DataManager:
         """
 
         headers = {
-            "User-Agent": src.const.USER_AGENT,
+            "User-Agent": const.USER_AGENT,
             "Accept": "text/csv, application/json, application/octet-stream"
         } # accept "text/csv" for futureproofing
 

@@ -27,8 +27,8 @@ from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 import requests
 
-import src.const
-from src.data_manager import DataManager
+from . import const
+from . import data_manager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -85,8 +85,8 @@ class AirQuality:
         disable_caching=False,
         auto_load=True,
         use_nominatim=True,
-        nominatim_timeout=src.const.NOMINATIM_TIMEOUT,
-        request_timeout=src.const.REQUEST_TIMEOUT
+        nominatim_timeout=const.NOMINATIM_TIMEOUT,
+        request_timeout=const.REQUEST_TIMEOUT
     ):
         """
         Initialize the Air Quality client.
@@ -116,14 +116,14 @@ class AirQuality:
         self._locality_code_to_station = {}
         self._city_coordinate_cache = {}
 
-        self._data_manager = DataManager(
+        self._data_manager = data_manager.DataManager(
             disable_caching=disable_caching,
             request_timeout=request_timeout
         )
 
         if self._use_nominatim:
             self._geolocator = Nominatim(
-                user_agent=src.const.USER_AGENT
+                user_agent=const.USER_AGENT
             )
             self._rate_limited_geocode = RateLimiter(
                 self._geolocator.geocode,
@@ -558,7 +558,7 @@ class AirQuality:
 
         try:
             raw_dict = json.loads(raw_json)
-            raw_dict.pop(src.const.CACHE_METADATA_KEY, None)
+            raw_dict.pop(const.CACHE_METADATA_KEY, None)
             self._data = raw_dict
         except json.JSONDecodeError as exc:
             _LOGGER.error("Error decoding JSON data during final load: %s", exc)
@@ -626,7 +626,7 @@ class AirQuality:
 
         try:
             value_float = float(value)
-            return value_float >= src.const.CHMI_ERROR_THRESHOLD
+            return value_float >= const.CHMI_ERROR_THRESHOLD
         except (ValueError, TypeError):
             return False
 
@@ -737,7 +737,7 @@ class AirQuality:
         if concentration is None or concentration < 0:
             return -1
 
-        bands = src.const.EAQI_BANDS.get(pollutant_code.upper())
+        bands = const.EAQI_BANDS.get(pollutant_code.upper())
         if not bands:
             return -1
 
@@ -790,11 +790,11 @@ class AirQuality:
         if aqi_value <= 0:
             return "N/A"
 
-        for limit, description in sorted(src.const.EAQI_LEVELS.items()):
+        for limit, description in sorted(const.EAQI_LEVELS.items()):
             if aqi_value <= limit:
                 return description
 
-        return src.const.EAQI_LEVELS[max(src.const.EAQI_LEVELS.keys())]
+        return const.EAQI_LEVELS[max(const.EAQI_LEVELS.keys())]
 
 
     def _get_station_measurements(self, station_data: dict) -> list[dict]:

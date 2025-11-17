@@ -19,7 +19,7 @@ and processing air quality data from the CHMI OpenData portal.
 
 __version__ = "0.0.1"
 
-from src.airquality import (
+from .airquality import (
     AirQuality,
     AirQualityError,
     DataDownloadError,

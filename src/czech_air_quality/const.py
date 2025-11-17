@@ -16,7 +16,7 @@
 Data constants for the library.
 """
 
-from src import __version__
+from . import __version__
 
 AQ_DATA_URL  = "https://opendata.chmi.cz/air_quality/now/data/airquality_1h_avg_CZ.csv"
 METADATA_URL = "https://opendata.chmi.cz/air_quality/now/metadata/metadata.json"

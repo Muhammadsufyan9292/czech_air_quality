@@ -19,20 +19,20 @@ Unit tests for AirQuality class.
 import unittest
 from unittest.mock import patch
 
-from src import (
+from src.czech_air_quality import (
     AirQuality,
     AirQualityError,
     DataDownloadError,
     StationNotFoundError,
     PollutantNotReportedError,
 )
-import src.const
+from src.czech_air_quality.const import NOMINATIM_TIMEOUT
 
 
 class TestAirQualityInitialization(unittest.TestCase):
     """Test AirQuality initialization with various configurations."""
 
-    @patch("src.data_manager.DataManager")
+    @patch("src.czech_air_quality.data_manager.DataManager")
     def test_init_defaults(self, mock_dm):
         """Test default initialization parameters."""
         mock_dm.return_value.raw_data_json = None
@@ -41,10 +41,10 @@ class TestAirQualityInitialization(unittest.TestCase):
 
         self.assertIsNone(aq._region_filter)
         self.assertTrue(aq._use_nominatim)
-        self.assertEqual(aq._nominatim_timeout, src.const.NOMINATIM_TIMEOUT)
+        self.assertEqual(aq._nominatim_timeout, NOMINATIM_TIMEOUT)
         self.assertEqual(aq._data, {})
 
-    @patch("src.data_manager.DataManager")
+    @patch("src.czech_air_quality.data_manager.DataManager")
     def test_init_with_region_filter(self, mock_dm):
         """Test initialization with region filter."""
         mock_dm.return_value.raw_data_json = None
@@ -53,7 +53,7 @@ class TestAirQualityInitialization(unittest.TestCase):
 
         self.assertEqual(aq._region_filter, "south moravia")
 
-    @patch("src.data_manager.DataManager")
+    @patch("src.czech_air_quality.data_manager.DataManager")
     def test_init_without_nominatim(self, mock_dm):
         """Test initialization with Nominatim disabled."""
         mock_dm.return_value.raw_data_json = None
@@ -64,7 +64,7 @@ class TestAirQualityInitialization(unittest.TestCase):
         self.assertIsNone(aq._geolocator)
         self.assertIsNone(aq._rate_limited_geocode)
 
-    @patch("src.data_manager.DataManager")
+    @patch("src.czech_air_quality.data_manager.DataManager")
     def test_init_with_custom_timeouts(self, mock_dm):
         """Test initialization with custom timeout values."""
         mock_dm.return_value.raw_data_json = None
@@ -93,7 +93,7 @@ class TestAirQualityExceptions(unittest.TestCase):
 class TestAirQualityHelpers(unittest.TestCase):
     """Test internal helper methods for data validation."""
 
-    @patch("src.data_manager.DataManager")
+    @patch("src.czech_air_quality.data_manager.DataManager")
     def setUp(self, mock_dm):
         """Set up test fixtures."""
         mock_dm.return_value.raw_data_json = None
@@ -103,7 +103,7 @@ class TestAirQualityHelpers(unittest.TestCase):
 class TestIsValidMeasurement(unittest.TestCase):
     """Test measurement validation logic."""
 
-    @patch("src.data_manager.DataManager")
+    @patch("src.czech_air_quality.data_manager.DataManager")
     def setUp(self, mock_dm):
         """Set up test fixtures."""
         mock_dm.return_value.raw_data_json = None
@@ -144,7 +144,7 @@ class TestIsValidMeasurement(unittest.TestCase):
 class TestEAQICalculation(unittest.TestCase):
     """Test EAQI (European Air Quality Index) calculation logic."""
 
-    @patch("src.data_manager.DataManager")
+    @patch("src.czech_air_quality.data_manager.DataManager")
     def setUp(self, mock_dm):
         """Set up test fixtures."""
         mock_dm.return_value.raw_data_json = None
@@ -235,7 +235,7 @@ class TestEAQICalculation(unittest.TestCase):
 class TestFindMeasurementInStation(unittest.TestCase):
     """Test the _find_measurement_in_station helper method (if implemented)."""
 
-    @patch("src.data_manager.DataManager")
+    @patch("src.czech_air_quality.data_manager.DataManager")
     def setUp(self, mock_dm):
         """Set up test fixtures."""
         mock_dm.return_value.raw_data_json = None
@@ -252,7 +252,7 @@ class TestGetAllStationNames(unittest.TestCase):
 
     def test_get_all_station_names_returns_list(self):
         """Test that get_all_station_names returns a list."""
-        with patch("src.airquality.AirQuality", side_effect=Exception("Mock error")):
+        with patch("src.czech_air_quality.airquality.AirQuality", side_effect=Exception("Mock error")):
             result = AirQuality.get_all_station_names()
 
             self.assertIsInstance(result, list)
