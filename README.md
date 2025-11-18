@@ -3,6 +3,8 @@ This library provides a python client for simply retrieving and processing air q
 
 It also contains the optional logic for automatically picking closest weather station to a location via `Nominatim`, automatically fetching multiple close stations to get measurements of all pollutants, fallback mechanisms, caching, and a `EAQI` calculation
 
+![PyPI - Version](https://img.shields.io/pypi/v/czech_air_quality?logo=python&logoColor=white) ![PyPI - Downloads](https://img.shields.io/pypi/dm/czech_air_quality?logo=python&logoColor=white) ![PyPI - Typing](https://img.shields.io/pypi/types/czech_air_quality?logo=python&logoColor=white)
+
 ## Table of Contents
 
 1. [Installation](#installation)
