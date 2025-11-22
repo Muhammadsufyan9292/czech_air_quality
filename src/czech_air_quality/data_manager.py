@@ -52,8 +52,12 @@ class DataManager:
         self._last_download_status = "Not yet run"
         self._etags = {}
         self._disable_caching = disable_caching
-        self._cache_file_path = os.path.join(
+        self._cache_dir_path = os.path.join(
             tempfile.gettempdir(),
+            const.CACHE_DIR_NAME
+        )
+        self._cache_file_path = os.path.join(
+            self._cache_dir_path,
             const.CACHE_FILE_NAME
         )
 
@@ -217,12 +221,16 @@ class DataManager:
             cache_data[const.CACHE_METADATA_KEY] = metadata
 
             os.makedirs(
-                os.path.dirname(self._cache_file_path),
-                exist_ok=True
+                self._cache_dir_path,
+                exist_ok=True,
+                mode=0o700 # rwx only for the owner
             )
 
             with open(self._cache_file_path, "w", encoding="utf-8") as file:
                 json.dump(cache_data, file, ensure_ascii=False)
+
+            # rwx only for the owner
+            os.chmod(self._cache_file_path, 0o600)
 
             _LOGGER.info("Fresh data and ETags saved to cache.")
         except (OSError, json.JSONDecodeError) as exc:

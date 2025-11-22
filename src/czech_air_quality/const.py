@@ -30,6 +30,7 @@ ETAG_URLS = {
     "metadata_etag": METADATA_URL
 }
 
+CACHE_DIR_NAME = "czech_air_quality"
 CACHE_FILE_NAME = "airquality_opendata_cache.json"
 CACHE_METADATA_KEY = "__cache_metadata__"
 TIMESTAMP_KEY = "timestamp"
