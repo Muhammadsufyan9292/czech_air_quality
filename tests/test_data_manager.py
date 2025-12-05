@@ -83,7 +83,6 @@ class TestETagValidation(unittest.TestCase):
 
         dm = DataManager()
         dm._etags = {"aq_data_etag": "test-etag", "metadata_etag": "test-etag"}
-        dm._last_download_status = "Cache valid"
         result = dm.is_data_fresh()
 
         self.assertIsInstance(result, bool)
@@ -152,14 +151,6 @@ class TestRawDataProperties(unittest.TestCase):
         result = dm.raw_data_json
 
         self.assertTrue(result is None or result == {})
-
-    @patch("src.czech_air_quality.data_manager.requests.get")
-    def test_last_download_status(self, _):
-        """Test last_download_status property."""
-        dm = DataManager()
-        status = dm.last_download_status
-
-        self.assertIsInstance(status, str)
 
 
 class TestActualizedTime(unittest.TestCase):

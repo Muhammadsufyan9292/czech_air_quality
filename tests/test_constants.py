@@ -141,14 +141,14 @@ class TestEAQIBands(unittest.TestCase):
     def test_pm10_bands_first_value(self):
         """Test PM10 specific band values (sanity check)."""
         pm10_bands = EAQI_BANDS["PM10"]
-        # First band should be (20, 10)
-        self.assertEqual(pm10_bands[0], (20, 10))
+        # First band should be (1, 20) - Level 1 at 20 µg/m³
+        self.assertEqual(pm10_bands[0], (1, 20))
 
     def test_o3_bands_first_value(self):
         """Test O3 specific band values (sanity check)."""
         o3_bands = EAQI_BANDS["O3"]
-        # First band should be (20, 60)
-        self.assertEqual(o3_bands[0], (20, 60))
+        # First band should be (1, 50) - Level 1 at 50 µg/m³
+        self.assertEqual(o3_bands[0], (1, 50))
 
 
 class TestEAQILevels(unittest.TestCase):
@@ -161,7 +161,7 @@ class TestEAQILevels(unittest.TestCase):
 
     def test_eaqi_levels_keys_are_numbers(self):
         """Test EAQI_LEVELS keys are numeric."""
-        for key in EAQI_LEVELS.keys():
+        for key in EAQI_LEVELS:
             self.assertIsInstance(key, int)
 
     def test_eaqi_levels_values_are_strings(self):
@@ -218,14 +218,6 @@ class TestMiscConstants(unittest.TestCase):
     def test_chmi_error_threshold(self):
         """Test CHMI_ERROR_THRESHOLD is defined."""
         self.assertIsNotNone(CHMI_ERROR_THRESHOLD)
-
-    def test_max_fallback_stations_positive(self):
-        """Test MAX_FALLBACK_STATIONS is positive."""
-        self.assertGreater(MAX_FALLBACK_STATIONS, 0)
-
-    def test_max_fallback_stations_reasonable(self):
-        """Test MAX_FALLBACK_STATIONS is reasonable."""
-        self.assertLess(MAX_FALLBACK_STATIONS, 20)
 
     def test_timestamp_key_not_empty(self):
         """Test TIMESTAMP_KEY is not empty."""

@@ -12,19 +12,39 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU Lesser General Public License for more details.
 
+# Need to use _warn() in this library so ignore wrong-import-position
+# pylint: disable=C0413
+
 """
 Provides a python client for simply retrieving 
 and processing air quality data from the CHMI OpenData portal.
 """
 
+import warnings
+
+def _warn(message: str, category: Warning = RuntimeWarning) -> None:
+    """
+    Wrapper for python warnings generated
+    by this library for the developer
+    """
+    warnings.warn(
+        message,
+        category=category,
+        stacklevel=2
+    )
+
 __version__ = "1.0.1"
 
-from .airquality import (
-    AirQuality,
+from .exceptions import (
     AirQualityError,
     DataDownloadError,
     StationNotFoundError,
     PollutantNotReportedError,
+    CacheError
+)
+
+from .api import (
+    AirQuality
 )
 
 __all__ = [
@@ -33,5 +53,6 @@ __all__ = [
     "DataDownloadError",
     "StationNotFoundError",
     "PollutantNotReportedError",
+    "CacheError",
     "__version__",
 ]

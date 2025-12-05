@@ -234,42 +234,51 @@ def get_air_quality_index(city_name: str) -> int
 | `city_name` | `str` | Name of the city |
 
 **Returns:**
-- `int` - EAQI value (0-500+), or `-1` if no valid measurements
+- `int` - EAQI level (0-6): 0=Error/N/A, 1=Good, 2=Fair, 3=Moderate, 4=Poor, 5=Very Poor, 6=Extremely Poor
 
 **Details:**
 - EAQI is the maximum sub-index across all reported pollutants
 - Supports: PM10, PM2.5, O3, NO2, SO2
 - Ignores invalid or missing measurements
+- Uses the official EAQI 0-6 scale
 
-**EAQI Scale:**
-| Value | Description |
+**EAQI Scale (0-6):**
+| Level | Description |
 |-------|-------------|
-| 0-25 | Good |
-| 26-50 | Fair |
-| 51-75 | Poor |
-| 76-100 | Very Poor |
-| 100+ | Extremely Poor |
+| 0 | Error/N/A |
+| 1 | Good |
+| 2 | Fair |
+| 3 | Moderate |
+| 4 | Poor |
+| 5 | Very Poor |
+| 6 | Extremely Poor |
 
 **Example:**
 ```python
 aqi = client.get_air_quality_index("Ostrava")
 print("Air Quality Index for Ostrava:", aqi)
 
-if aqi <= 25:
+if aqi == 1:
     status = "Good"
-elif aqi <= 50:
+elif aqi == 2:
     status = "Fair"
-elif aqi <= 75:
+elif aqi == 3:
+    status = "Moderate"
+elif aqi == 4:
     status = "Poor"
-else:
+elif aqi == 5:
     status = "Very Poor"
+elif aqi == 6:
+    status = "Extremely Poor"
+else:
+    status = "Error/No data"
 
 print("Status:", status)
 ```
 
 **Output:**
 ```
-Air Quality Index for Ostrava: 65
+Air Quality Index for Ostrava: 4
 Status: Poor
 ```
 
@@ -420,33 +429,34 @@ Status: Measured
 
 ---
 
-#### `ensure_data_loaded()`
-Ensure data is loaded and fresh, downloading if necessary.
+#### `force_fetch_fresh()`
+Force fetching fresh data from the source without waiting for the 20-minute cache timer.
 
 ```python
-def ensure_data_loaded() -> None
+def force_fetch_fresh() -> None
 ```
 
 **Behavior:**
-- Called automatically by public methods
-- Loads from cache if available
-- Validates cache via ETag checks
-- Downloads fresh data if cache is stale
-- Can be called manually to force refresh
+- Bypasses the normal 20-minute cache timeout
+- Still uses cached data if server returns 304 (Not Modified) via ETag
+- Downloads fresh data if server indicates changes
+- Raises `DataDownloadError` if download fails and no cache is available
 
-**Raises:**
-- `DataDownloadError` - If all data sources fail to load
+**Details:**
+- Useful when you need fresh data before the automatic refresh
+- Still respects ETag validation to avoid unnecessary downloads
+- Does not disable caching - updates the cache with new data
 
 **Example:**
 ```python
-client = AirQuality(auto_load=False)
-client.ensure_data_loaded()
-print("Data is ready for use")
-```
+client = AirQuality()
+print("Using potentially cached data")
+report1 = client.get_air_quality_report("Prague")
 
-**Output:**
-```
-Data is ready for use
+# Force a refresh from server
+client.force_fetch_fresh()
+print("Using fresh data")
+report2 = client.get_air_quality_report("Prague")
 ```
 
 ---
@@ -499,6 +509,18 @@ class PollutantNotReportedError(AirQualityError):
 - Station lacks equipment to measure the pollutant
 - Measurement data temporarily unavailable
 
+### CacheError
+Raised when there is an error related to caching data.
+
+```python
+class CacheError(AirQualityError):
+    """Raised when there is an error related to caching data."""
+```
+
+**Common Causes:**
+- Operating system errors
+- Cache file is corrupted or unreadable
+
 **Example:**
 ```python
 from czech_air_quality import (
@@ -533,7 +555,7 @@ Dictionary returned by `get_air_quality_report()`:
     "station_code": str,                     # Station locality code
     "region": str,                           # Czech region name
     "distance_km": str,                      # Distance as "X.XX"
-    "air_quality_index_code": int,           # EAQI value (0-500+)
+    "air_quality_index_code": int,           # EAQI level (0-6)
     "air_quality_index_description": str,    # Description (e.g., "Good")
     "actualized_time_utc": str,              # ISO format UTC timestamp
     "measurements": list[dict],              # List of measurements
@@ -738,11 +760,24 @@ client = AirQuality(disable_caching=True)
 
 # Check cache status
 print("Fresh:", client.is_data_fresh)
+
+# Force fresh data before 20-minute TTL expires
+client.force_fetch_fresh()
 ```
+
+**Caching Strategy:**
+The library implements a freshness check:
+1. **Cache Hit (Recent):** If cached data is < 20 minutes old, use it immediately
+2. **ETag Validation:** If cache is > 20 minutes old, perform HTTP-HEAD request with ETag
+   - If server returns **304 (Not Modified)**, trust cache for another 20 minutes
+   - If server returns **200 (Modified)**, download full data
+3. **Network Error:** If network unavailable but cache exists, use stale cache with warning
+4. **Force Refresh:** `force_fetch_fresh()` bypasses age check but respects ETags
 
 Cache files are stored in system temporary directory:
 - **File:** `airquality_opendata_cache.json`
 - **Location:** `tempfile.gettempdir()` (typically `/tmp/` on Linux, `%TEMP%` on Windows)
+- **Contents:** Combined metadata, CSV data, and ETags
 
 ### Nominatim Geocoding
 Control whether to use Nominatim for city name lookups:

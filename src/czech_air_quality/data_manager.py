@@ -13,10 +13,14 @@
 #  GNU Lesser General Public License for more details.
 
 """
-Data management, caching, and download manager
+Data management.
 """
 
-from datetime import datetime,timezone
+from datetime import (
+    datetime,
+    timezone,
+    timedelta
+)
 import json
 import os
 import csv
@@ -25,7 +29,8 @@ import tempfile
 import logging
 import requests
 
-from . import const
+from . import const, _warn
+from . import DataDownloadError, CacheError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +40,6 @@ class DataManager:
     Manages data caching, downloading, and parsing for air quality data.
     Handles ETag-based conditional downloads, local caching, and data combination.
     """
-
     def __init__(self, disable_caching: bool = False,
             request_timeout: int = const.REQUEST_TIMEOUT):
         """
@@ -46,11 +50,13 @@ class DataManager:
         :param request_timeout: HTTP request timeout in seconds
         :type request_timeout: int
         """
-        self._request_timeout = request_timeout
-        self._raw_data_json = None
         self._actualized_time = datetime.min
-        self._last_download_status = "Not yet run"
-        self._etags = {}
+
+        self._raw_data_json: str | None = None
+        self._raw_metadata_json: dict | None = None
+        self._raw_aq_csv_str: str | None = None
+
+        self._request_timeout = request_timeout
         self._disable_caching = disable_caching
         self._cache_dir_path = os.path.join(
             tempfile.gettempdir(),
@@ -60,6 +66,7 @@ class DataManager:
             self._cache_dir_path,
             const.CACHE_FILE_NAME
         )
+        self._etags = {}
 
 
     @property
@@ -72,44 +79,74 @@ class DataManager:
         """Get timestamp when data was last actualized."""
         return self._actualized_time
 
-    @property
-    def last_download_status(self) -> str:
-        """Get status message from last download attempt."""
-        return self._last_download_status
 
-
-    def ensure_latest_data(self) -> None:
+    def ensure_latest_data(self, force_fetch: bool = False) -> None:
         """
-        Ensure raw data is loaded and fresh.
-        Loads from cache if available, verifies freshness via ETags, downloads if needed.
+        Ensure data is loaded and fresh using a freshness check strategy.
 
-        :raises DataDownloadError: If no data can be retrieved from cache or download
+        The freshness check works as follows:
+        1. Load Cache: Attempt to load data from the local cache file.
+        2. Freshness Check: If cache is present, check if its age exceeds 20 minutes.
+        3. ETag Validation: If cache is expired, perform a HTTP-HEAD ETag check.
+           - If server returns 304 (Not Modified), trust cache for another 20 minutes.
+           - If server returns 200 (Modified), download full data.
+        4. Force Fetch/No Cache: If caching is disabled or force_fetch is True,
+           download fresh data immediately.
+        5. Offline Fallback: If network is unavailable, use stale cache if available.
+
+        :param force_fetch: If True, bypass all cache logic and download fresh data
+        :type force_fetch: bool
+        :raises DataDownloadError: If no data can be retrieved from downloads or cache
         """
-        cache_is_fresh = self._load_from_cache()
+        cache_loaded = self._load_from_cache()
 
-        if self._disable_caching:
-            _LOGGER.info("Caching disabled. Forcing fresh download.")
+        if self._disable_caching or force_fetch:
+            _LOGGER.debug("Caching disabled. Forcing fresh download.")
             self._download_data()
-        elif not cache_is_fresh:
+            return
+
+        if not cache_loaded:
+            _LOGGER.debug("No cache file found. Downloading fresh data.")
             self._download_data()
-        elif not self.is_data_fresh():
-            _LOGGER.info("Cached data is stale according to ETag check. Downloading fresh data.")
-            self._download_data()
+            return
+
+        cache_age = self._get_cache_file_age()
+        cache_expired = (cache_age is None) or (cache_age > timedelta(minutes=20))
+
+        if not cache_expired:
+            _LOGGER.debug("Cache is recent (Age: %s).", cache_age)
+            return
+
+        _LOGGER.debug("Cache expired (Age: %s). Doing an ETag check", cache_age)
+
+        if self.is_data_fresh():
+            _LOGGER.debug(
+                "ETag is still fresh. %s",
+                "Marking the data as fresh for another 20 minutes."
+            )
+            self._refresh_cache_validation_timestamp()
+        else:
+            _LOGGER.debug("ETag is stale. Downloading new data.")
+            try:
+                self._download_data()
+            except DataDownloadError:
+                if self._raw_data_json:
+                    _warn("Download failed, but stale cache is available. Using it")
+                else:
+                    raise
 
         if not self._raw_data_json:
             raise DataDownloadError(
-                "Could not retrieve any air quality data from download or cache."
+                "Could not retrieve any air quality data from downloads or cache."
             )
 
 
     def is_data_fresh(self) -> bool:
         """
-        Check if cached data is fresh via ETag validation.
+        Check if cached data is fresh via HTTP-HEAD ETag validation with the server.
 
-        Performs conditional GET requests against metadata files.
-
-        :return: True if all resources are 304 (Not Modified) or caching disabled; 
-                 False if any resource is 200 (Modified) or network error
+        :return: True if all resources return 304 (Not Modified) or caching is disabled;
+                 False if any resource is 200 (Modified) or if network errors occur
         :rtype: bool
         """
 
@@ -122,27 +159,23 @@ class DataManager:
         is_modified = False
         all_304_or_ok = True
 
-        _LOGGER.info(
+        _LOGGER.debug(
             "Checking server ETag freshness for metadata at %s.", 
             datetime.now(timezone.utc).isoformat()
         )
 
         try:
             for etag_key, url in const.ETAG_URLS.items():
-                response = self._perform_conditional_download(url, etag_key)
+                response = self._perform_conditional_head(url, etag_key)
 
                 if response.status_code == 200:
                     is_modified = True
-                    _LOGGER.info("Resource %s was modified (200). Full download required.", url)
+                    _LOGGER.debug("Resource %s was modified (200). Full download required.", url)
                     break
 
                 if response.status_code not in (200, 304):
                     all_304_or_ok = False
-                    _LOGGER.warning(
-                        "Server check failed for %s: Status %d",
-                        url,
-                        response.status_code,
-                    )
+                    _warn(f"Server check failed for {url}: Status {response.status_code}")
                     break
 
             if is_modified:
@@ -152,9 +185,7 @@ class DataManager:
                 return True
 
         except requests.exceptions.RequestException as exc:
-            _LOGGER.error(
-                "Server ETag freshness check failed due to network error: %s", exc
-            )
+            _warn(f"ETag freshness check failed due to network error: {exc}. Using cached data")
             return False
 
         return False
@@ -162,14 +193,13 @@ class DataManager:
 
     def _load_from_cache(self) -> bool:
         """
-        Load data and ETags from cache file.
+        Load data, ETags, and raw components (metadata/CSV) from cache file.
 
-        :return: True if successfully loaded, False otherwise
+        :return: True if successfully loaded all required components, False otherwise
         :rtype: bool
-        :raises OSError: If cache file cannot be read
-        :raises json.JSONDecodeError: If cache file is corrupted
+        :raises OSError: If cache file cannot be read or lacks permissions
+        :raises json.JSONDecodeError: If cache file contains invalid JSON
         """
-
         if self._disable_caching:
             return False
         try:
@@ -178,19 +208,23 @@ class DataManager:
 
             metadata    = cache_data.pop(const.CACHE_METADATA_KEY, {})
             cache_time  = metadata.get(const.TIMESTAMP_KEY)
-            self._etags = metadata.get(const.ETAGS_KEY, {})
 
-            if cache_time:
-                self._actualized_time = datetime.fromisoformat(cache_time)
-            else:
+            self._etags = metadata.get(const.ETAGS_KEY, {})
+            self._raw_metadata_json = cache_data.get("raw_metadata_json")
+            self._raw_aq_csv_str = cache_data.get("raw_aq_csv_str")
+            self._raw_data_json = cache_data.get("combined_data")
+
+            if not cache_time or not self._raw_data_json or not self._raw_metadata_json or not self._raw_aq_csv_str:
+                self._etags = {}
                 return False
 
-            cache_data[const.CACHE_METADATA_KEY] = metadata
-            self._raw_data_json = json.dumps(cache_data, ensure_ascii=False)
-            self._last_download_status = f"""Loaded data from cache (pending ETag validation).
-                Updated at {self._actualized_time.strftime('%Y-%m-%d %H:%M')}"""
+            try:
+                self._actualized_time = datetime.fromisoformat(cache_time)
+            except ValueError as exc:
+                _LOGGER.debug("Invalid cache timestamp format: %s", exc)
+                return False
 
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Loaded data and ETags from cache. Timestamp: %s. Awaiting network validation.",
                 self._actualized_time.strftime("%Y-%m-%d %H:%M"),
             )
@@ -199,6 +233,10 @@ class DataManager:
         except (json.JSONDecodeError, OSError) as exc:
             _LOGGER.debug("Cache load failed: %s", exc)
             self._actualized_time = datetime.min
+
+            self._raw_metadata_json = None
+            self._raw_aq_csv_str = None
+            self._raw_data_json = None
             return False
 
 
@@ -206,35 +244,67 @@ class DataManager:
         """
         Save raw JSON data with timestamp and ETags to cache file.
 
-        :param data_json_str: JSON string to cache
+        :param data_json_str: Combined JSON string to cache
         :type data_json_str: str
         """
         if not data_json_str or self._disable_caching:
             return
 
         try:
-            cache_data = json.loads(data_json_str)
-            metadata = {
-                const.TIMESTAMP_KEY: datetime.now(timezone.utc).isoformat(),
-                const.ETAGS_KEY: self._etags,
+            timestamp = datetime.now(timezone.utc).isoformat()
+
+            self._write_cache_file(
+                data_json_str,
+                self._raw_metadata_json,
+                self._raw_aq_csv_str,
+                timestamp
+            )
+
+            _LOGGER.debug("Fresh data and ETags saved to cache.")
+        except (CacheError) as exc:
+            _warn(f"Could not save data to cache file: {exc}")
+
+
+    def _write_cache_file(self, combined_data_json: str,
+        metadata_json: dict | None, aq_csv_str: str | None, timestamp: str) -> None:
+        """
+        Write cache data to the file system.
+
+        :param combined_data_json: Combined JSON data string
+        :type combined_data_json: str
+        :param metadata_json: Parsed metadata dictionary (may be None during initial load)
+        :type metadata_json: dict | None
+        :param aq_csv_str: Raw CSV data string (may be None during initial load)
+        :type aq_csv_str: str | None
+        :param timestamp: ISO format timestamp of cache creation
+        :type timestamp: str
+        :raises CacheError: If file system operations fail
+        """
+        try:
+            cache_data = {
+                "combined_data": combined_data_json,
+                "raw_metadata_json": metadata_json,
+                "raw_aq_csv_str": aq_csv_str,
+                const.CACHE_METADATA_KEY: {
+                    const.TIMESTAMP_KEY: timestamp,
+                    const.ETAGS_KEY: self._etags,
+                }
             }
-            cache_data[const.CACHE_METADATA_KEY] = metadata
 
             os.makedirs(
                 self._cache_dir_path,
                 exist_ok=True,
-                mode=0o700 # rwx only for the owner
+                mode=0o700 # rwx only for the owner (dir)
             )
 
             with open(self._cache_file_path, "w", encoding="utf-8") as file:
                 json.dump(cache_data, file, ensure_ascii=False)
 
-            # rwx only for the owner
+            # rwx only for the owner (file)
             os.chmod(self._cache_file_path, 0o600)
 
-            _LOGGER.info("Fresh data and ETags saved to cache.")
         except (OSError, json.JSONDecodeError) as exc:
-            _LOGGER.warning("Could not save data to cache file: %s", exc)
+            raise CacheError(f"File system error during cache write: {exc}") from exc
 
 
     def _download_data(self) -> None:
@@ -243,103 +313,112 @@ class DataManager:
 
         :raises DataDownloadError: If download fails and no cache available
         """
-
-        _LOGGER.info(
-            "Attempting to download fresh data from OpenData CHMI endpoints..."
-        )
+        _LOGGER.debug("Attempting to download fresh data.")
 
         download_results = {}
         is_modified = False
+
+        raw_metadata_content: dict | None = None
+        raw_aq_csv_content: str | None = None
 
         try:
             for etag_key, url in const.ETAG_URLS.items():
                 response = self._perform_conditional_download(url, etag_key)
 
                 if response.status_code == 304:
-                    _LOGGER.info(
-                        "Resource %s not modified (304). Using cached version.", url
-                    )
+                    _LOGGER.debug("Resource %s not modified. Using cached version.", url)
                     download_results[etag_key] = {"status": 304}
-                else:
-                    response.raise_for_status()
-                    is_modified = True
+                    continue
 
-                    download_results[etag_key] = {
-                        "status": response.status_code,
-                        "content": response.text if "csv" in url else response.json(),
-                    }
+                response.raise_for_status()
+                is_modified = True
 
-            if not is_modified and self._raw_data_json:
-                timestamp = datetime.now(timezone.utc)
-                self._actualized_time = timestamp
-                self._last_download_status = f"Success. Refreshed at {timestamp.strftime('%Y-%m-%d %H:%M')}"
-                self._save_to_cache(self._raw_data_json)
-                _LOGGER.info("All resources were Not Modified (304). Using existing data.")
+                content = response.text if "csv" in url else response.json()
+
+                if etag_key == "metadata_etag":
+                    if isinstance(content, dict):
+                        raw_metadata_content = content
+                    else:
+                        _warn(f"Invalid metadata format from {url}")
+
+                elif etag_key == "aq_data_etag":
+                    if isinstance(content, str):
+                        raw_aq_csv_content = content
+                    else:
+                        _warn(f"Invalid CSV format from {url}")
+
+                download_results[etag_key] = {
+                    "status": response.status_code,
+                    "content": content
+                }
+
+            if not is_modified:
+                _LOGGER.debug("All resources are unmodified. Using existing data.")
                 return
 
-            metadata_data = download_results.get("metadata_etag", {}).get("content")
-            aq_csv_str = download_results.get("aq_data_etag", {}).get("content")
+            metadata_data: dict | None = raw_metadata_content or self._raw_metadata_json
+            aq_csv_str: str | None = raw_aq_csv_content or self._raw_aq_csv_str
 
             if metadata_data is None or aq_csv_str is None:
                 raise DataDownloadError(
-                    """Failed to download required data files. 
-                    At least one file is missing or invalid."""
+                    "Failed to download required data files. "
+                    "At least one file is missing or invalid."
                 )
 
+            self._raw_metadata_json = metadata_data
+            self._raw_aq_csv_str = aq_csv_str
+
             combined_data = self._combine_downloaded_data(
-                metadata_data, aq_csv_str
+                metadata_data,
+                aq_csv_str
+            )
+            timestamp = datetime.now(timezone.utc)
+
+            self._actualized_time = timestamp
+            self._raw_data_json = json.dumps(
+                combined_data, 
+                ensure_ascii=False
             )
 
-            timestamp = datetime.now(timezone.utc)
-            self._raw_data_json = json.dumps(combined_data, ensure_ascii=False)
-            self._actualized_time = timestamp
-            self._last_download_status = (
-                f"Success. Data downloaded at {timestamp.strftime('%Y-%m-%d %H:%M')}"
-            )
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Download successful. Data downloaded at %s.",
                 timestamp.strftime("%Y-%m-%d %H:%M"),
             )
             self._save_to_cache(self._raw_data_json)
 
         except requests.exceptions.RequestException as exc:
-            self._last_download_status = f"Download failed: {exc}"
-
             if not self._raw_data_json and not self._load_from_cache():
                 raise DataDownloadError(
                     f"Failed to download and no cache data is available: {exc}"
                 ) from exc
 
-            _LOGGER.warning("Download failed: %s. Falling back to cached data.", exc)
+            _warn(f"Download failed: {exc}. Falling back to cached data.")
 
         except json.JSONDecodeError as exc:
-            self._last_download_status = (
-                f"Download successful but data parse failed: {exc}"
-            )
-
             if not self._raw_data_json and not self._load_from_cache():
                 raise DataDownloadError(
                     f"Downloaded data is invalid and no cache data is available: {exc}"
                 ) from exc
 
-            _LOGGER.warning(
-                "Downloaded data is invalid: %s. Falling back to cached data.", exc
-            )
+            _warn(f"Downloaded data is invalid: {exc}. Falling back to cached data.")
 
 
-    def _combine_downloaded_data(
-        self, metadata_json: dict, aq_csv_str: str
-    ) -> dict:
-        """f
-        Combine metadata and CSV data into unified structure.
+    def _combine_downloaded_data(self, metadata_json: dict, aq_csv_str: str) -> dict:
+        """
+        Combine metadata and CSV data into a unified structure for caching and processing.
 
-        :param metadata_json: Parsed metadata JSON
+        Creates a structured dictionary containing:
+        - Localities with station information (coordinates, region)
+        - ID registration to component mappings (pollutant codes, names, units)
+        - Measurements organized by ID registration with values and timestamps
+
+        :param metadata_json: Parsed metadata JSON from CHMI (must be a dict)
         :type metadata_json: dict
-        :param aq_csv_str: Raw CSV string
+        :param aq_csv_str: Raw CSV string with air quality measurements
         :type aq_csv_str: str
-        :return: Combined data dictionary
+        :return: Combined data dictionary with Localities, Measurements, and component mappings
         :rtype: dict
-        :raises DataDownloadError: If inputs are invalid types
+        :raises DataDownloadError: If inputs are invalid types or malformed
         """
 
         if not isinstance(metadata_json, dict):
@@ -387,17 +466,16 @@ class DataManager:
 
         for row in aq_reader:
             normalized_row = {k.strip(): v for k, v in row.items()}
-            id_reg = normalized_row.get("idRegistration", "").strip()
+            id_reg     = normalized_row.get("idRegistration", "").strip()
             start_time = normalized_row.get("startTime", "").strip()
             id_value_type = normalized_row.get("idValueType", "").strip()
-            value = normalized_row.get("value", "").strip()
+            value         = normalized_row.get("value", "").strip()
 
             if id_reg:
                 if id_reg not in combined["Measurements"]:
                     combined["Measurements"][id_reg] = []
 
-                combined["Measurements"][id_reg].append(
-                    {
+                combined["Measurements"][id_reg].append({
                         "startTime": start_time,
                         "idValueType": id_value_type,
                         "value": value,
@@ -407,22 +485,42 @@ class DataManager:
         return combined
 
 
+    def _perform_conditional_head(self, url: str, etag_key: str) -> requests.Response:
+        """
+        Perform a HEAD request with ETag conditional headers to check for modification.
+
+        :param url: URL to check for updates
+        :type url: str
+        :param etag_key: Key for storing/retrieving ETag value
+        :type etag_key: str
+        :return: Response object (200=modified, 304=not modified)
+        :rtype: requests.Response
+        """
+        headers = const.REQUEST_HEADERS.copy()
+
+        if etag_key in self._etags:
+            headers["If-None-Match"] = self._etags[etag_key]
+
+        response = requests.head(url,
+            headers=headers,
+            timeout=self._request_timeout
+        )
+
+        return response
+
+
     def _perform_conditional_download(self, url: str, etag_key: str) -> requests.Response:
         """
         Perform GET request with ETag conditional headers.
 
-        :param url: URL to download
+        :param url: URL to download from
         :type url: str
         :param etag_key: Key for storing/retrieving ETag
         :type etag_key: str
-        :return: Response object
+        :return: Response object with status code and content
         :rtype: requests.Response
         """
-
-        headers = {
-            "User-Agent": const.USER_AGENT,
-            "Accept": "text/csv, application/json, application/octet-stream"
-        } # accept "text/csv" for futureproofing
+        headers = const.REQUEST_HEADERS.copy()
 
         if etag_key in self._etags:
             headers["If-None-Match"] = self._etags[etag_key]
@@ -437,3 +535,53 @@ class DataManager:
             self._etags[etag_key] = new_etag
 
         return response
+
+
+    def _refresh_cache_validation_timestamp(self) -> None:
+        """
+        Updates the cache file timestamp and _actualized_time after a successful
+        304 (Not Modified) ETag validation, resetting the 20-minute cache timer.
+        """
+        if self._disable_caching or not self._raw_data_json:
+            return
+
+        try:
+            current_timestamp = datetime.now(timezone.utc)
+
+            self._write_cache_file(
+                self._raw_data_json,
+                self._raw_metadata_json,
+                self._raw_aq_csv_str,
+                current_timestamp.isoformat()
+            )
+
+            self._actualized_time = current_timestamp
+
+            _LOGGER.debug(
+                "Cache verified fresh and timestamp updated to %s",
+                current_timestamp.strftime("%H:%M")
+            )
+        except (json.JSONDecodeError, OverflowError) as exc:
+            _warn(f"Could not update cache timestamp: {exc}")
+
+
+    def _get_cache_file_age(self) -> timedelta | None:
+        """
+        Reads the file timestamp of a cache file.
+
+        :return: the current age of a file
+        :rtype: timedelta | None
+        """
+        if not os.path.exists(self._cache_file_path):
+            return None
+
+        try:
+            file_mod_timestamp = os.path.getmtime(self._cache_file_path)
+            file_mod_datetime = datetime.fromtimestamp(
+                timestamp=file_mod_timestamp,
+                tz=timezone.utc
+            )
+            return datetime.now(timezone.utc) - file_mod_datetime
+        except OSError as exc:
+            _warn(f"Could not read cache file modification time: {exc}")
+            return None

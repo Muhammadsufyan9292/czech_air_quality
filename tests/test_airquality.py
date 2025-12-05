@@ -119,7 +119,7 @@ class TestIsValidMeasurement(unittest.TestCase):
 
     def test_is_valid_measurement_zero(self):
         """Test is_valid_measurement with zero (valid)."""
-        self.assertTrue(self.aq._is_valid_measurement(0))
+        self.assertFalse(self.aq._is_valid_measurement(0))
 
     def test_is_valid_measurement_none(self):
         """Test is_valid_measurement with None."""
@@ -153,51 +153,48 @@ class TestEAQICalculation(unittest.TestCase):
     def test_calculate_e_aqi_subindex_invalid_pollutant(self):
         """Test EAQI calculation with unknown pollutant."""
         result = self.aq._calculate_e_aqi_subindex("UNKNOWN", 50.0)
-        self.assertEqual(result, -1)
+        self.assertEqual(result, 0)
 
     def test_calculate_e_aqi_subindex_none_value(self):
         """Test EAQI calculation with None concentration."""
         result = self.aq._calculate_e_aqi_subindex("PM10", None)
-        self.assertEqual(result, -1)
+        self.assertEqual(result, 0)
 
     def test_calculate_e_aqi_subindex_negative_value(self):
         """Test EAQI calculation with negative concentration."""
         result = self.aq._calculate_e_aqi_subindex("PM10", -5.0)
-        self.assertEqual(result, -1)
+        self.assertEqual(result, 0)
 
     def test_calculate_e_aqi_subindex_pm10_zero(self):
         """Test PM10 EAQI at zero concentration."""
         result = self.aq._calculate_e_aqi_subindex("PM10", 0.0)
-        self.assertEqual(result, 0)
+        self.assertEqual(result, 1)  # Good level (0-20 µg/m³)
 
     def test_calculate_e_aqi_subindex_pm10_below_first_band(self):
         """Test PM10 EAQI below first breakpoint."""
-        # PM10 first band is 20 at 10 µg/m³
+        # PM10 first band: Level 1 (Good) at 20 µg/m³
         result = self.aq._calculate_e_aqi_subindex("PM10", 5.0)
-        # Should interpolate between (0,0) and (20,10)
-        # AQI = (20 - 0) / (10 - 0) * (5 - 0) + 0 = 10
-        self.assertEqual(result, 10)
+        # 5 is below 20, so it's level 1 (Good)
+        self.assertEqual(result, 1)
 
     def test_calculate_e_aqi_subindex_pm10_first_band(self):
         """Test PM10 EAQI in first band."""
-        # PM10 first band is 20 at 10 µg/m³, second band is 35 at 20 µg/m³
+        # PM10 first band: Level 1 (Good) at 20 µg/m³, Level 2 (Fair) at 40 µg/m³
         result = self.aq._calculate_e_aqi_subindex("PM10", 15.0)
-        # Should interpolate between (20,10) and (35,20)
-        # AQI = (35 - 20) / (20 - 10) * (15 - 10) + 20 = 27.5 → 28
-        self.assertEqual(result, 28)
+        # 15 is below 20, so it's level 1 (Good)
+        self.assertEqual(result, 1)
 
     def test_calculate_e_aqi_subindex_pm10_exact_band(self):
         """Test PM10 EAQI at exact band limit."""
-        result = self.aq._calculate_e_aqi_subindex("PM10", 10.0)
-        self.assertEqual(result, 20)
+        result = self.aq._calculate_e_aqi_subindex("PM10", 20.0)
+        self.assertEqual(result, 1)  # At threshold of Good level
 
     def test_calculate_e_aqi_subindex_o3(self):
         """Test O3 EAQI calculation."""
         result = self.aq._calculate_e_aqi_subindex("O3", 150.0)
-        # O3 bands: (20,60), (35,100), (50,140), (70,180)...
-        # 150 falls between (50,140) and (70,180)
-        # AQI = (70-50)/(180-140) * (150-140) + 50 = 55
-        self.assertEqual(result, 55)
+        # O3 bands: Level 1 at 50, Level 2 at 100, Level 3 at 130, Level 4 at 240...
+        # 150 falls above 130 but below 240, so it's level 4 (Poor)
+        self.assertEqual(result, 4)
 
     def test_get_aqi_description_error(self):
         """Test AQI description for error value."""
@@ -208,28 +205,28 @@ class TestEAQICalculation(unittest.TestCase):
 
     def test_get_aqi_description_good(self):
         """Test AQI description for good air quality."""
-        desc = self.aq._get_aqi_description(10)
+        desc = self.aq._get_aqi_description(1)
         self.assertEqual(desc, "Good")
 
     def test_get_aqi_description_fair(self):
         """Test AQI description for fair air quality."""
-        desc = self.aq._get_aqi_description(40)
+        desc = self.aq._get_aqi_description(2)
         self.assertEqual(desc, "Fair")
 
     def test_get_aqi_description_poor(self):
         """Test AQI description for poor air quality."""
-        desc = self.aq._get_aqi_description(65)
+        desc = self.aq._get_aqi_description(4)
         self.assertEqual(desc, "Poor")
 
     def test_get_aqi_description_very_poor(self):
         """Test AQI description for very poor air quality."""
-        desc = self.aq._get_aqi_description(85)
+        desc = self.aq._get_aqi_description(5)
         self.assertEqual(desc, "Very Poor")
 
     def test_get_aqi_description_extremely_poor(self):
         """Test AQI description for extremely poor air quality."""
-        desc = self.aq._get_aqi_description(150)
-        self.assertEqual(desc, "Very Poor")
+        desc = self.aq._get_aqi_description(6)
+        self.assertEqual(desc, "Extremely Poor")
 
 
 class TestFindMeasurementInStation(unittest.TestCase):
@@ -252,7 +249,7 @@ class TestGetAllStationNames(unittest.TestCase):
 
     def test_get_all_station_names_returns_list(self):
         """Test that get_all_station_names returns a list."""
-        with patch("src.czech_air_quality.airquality.AirQuality", side_effect=Exception("Mock error")):
+        with patch("src.czech_air_quality.api.AirQuality", side_effect=Exception("Mock error")):
             result = AirQuality.get_all_station_names()
 
             self.assertIsInstance(result, list)

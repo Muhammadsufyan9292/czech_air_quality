@@ -20,7 +20,7 @@ import unittest
 from unittest.mock import patch
 from datetime import datetime, timezone
 
-from src.czech_air_quality.airquality import (
+from czech_air_quality.api import (
     AirQuality,
     StationNotFoundError,
 )

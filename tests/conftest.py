@@ -28,7 +28,6 @@ def mock_data_manager():
         instance = Mock()
         instance.raw_data_json = None
         instance.actualized_time = datetime.now(timezone.utc)
-        instance.last_download_status = "Mock data"
         instance.is_data_fresh.return_value = True
         instance.ensure_latest_data = Mock()
 

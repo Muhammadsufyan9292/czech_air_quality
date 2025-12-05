@@ -13,17 +13,13 @@
 #  GNU Lesser General Public License for more details.
 
 """
-Data constants for the library.
+Data constants of the library.
 """
 
 from . import __version__
 
 AQ_DATA_URL  = "https://opendata.chmi.cz/air_quality/now/data/airquality_1h_avg_CZ.csv"
 METADATA_URL = "https://opendata.chmi.cz/air_quality/now/metadata/metadata.json"
-
-USER_AGENT = f"python-czech_air_quality/{__version__}"
-NOMINATIM_TIMEOUT = 10
-REQUEST_TIMEOUT = 20
 
 ETAG_URLS = {
     "aq_data_etag": AQ_DATA_URL,
@@ -36,41 +32,70 @@ CACHE_METADATA_KEY = "__cache_metadata__"
 TIMESTAMP_KEY = "timestamp"
 ETAGS_KEY = "etags"
 
-# Threshold for pollutant values considered as Error/N/A
-CHMI_ERROR_THRESHOLD = 0
+USER_AGENT = f"python-czech_air_quality/{__version__}"
+NOMINATIM_TIMEOUT = 10
+REQUEST_TIMEOUT = 20
+REQUEST_HEADERS = {
+     "User-Agent": USER_AGENT,
+     "Accept": "text/csv, application/json, application/octet-stream"
+} # text/csv is for futureproofing
 
-# Maximum number of nearby stations to search for fallback
-MAX_FALLBACK_STATIONS = 5
+# Threshold for pollutant values considered as Error/N/A
+# Value that is X or above will be accepted
+CHMI_ERROR_THRESHOLD = 1.1
+
+EAQI_BANDS = {
+    # EAQI Standard 0-6 Scale
+    # Concentration breakpoints (µg/m³) and the corresponding EAQI level (1-6)
+    # Format: (EAQI_Level, Upper_Concentration_Limit)
+    "PM10": [
+        (1, 20),    # Good: 0-20
+        (2, 40),    # Fair: 20-40
+        (3, 50),    # Moderate: 40-50
+        (4, 100),   # Poor: 50-100
+        (5, 150),   # Very Poor: 100-150
+        (6, float("inf"))  # Extremely Poor: ≥150
+    ],
+    "PM2_5": [
+        (1, 10),    # Good: 0-10
+        (2, 20),    # Fair: 10-20
+        (3, 25),    # Moderate: 20-25
+        (4, 50),    # Poor: 25-50
+        (5, 75),    # Very Poor: 50-75
+        (6, float("inf"))  # Extremely Poor: ≥75
+    ],
+    "O3": [
+        (1, 50),    # Good: 0-50
+        (2, 100),   # Fair: 50-100
+        (3, 130),   # Moderate: 100-130
+        (4, 240),   # Poor: 130-240
+        (5, 380),   # Very Poor: 240-380
+        (6, float("inf"))  # Extremely Poor: ≥380
+    ],
+    "NO2": [
+        (1, 40),    # Good: 0-40
+        (2, 90),    # Fair: 40-90
+        (3, 120),   # Moderate: 90-120
+        (4, 230),   # Poor: 120-230
+        (5, 340),   # Very Poor: 230-340
+        (6, float("inf"))  # Extremely Poor: ≥340
+    ],
+    "SO2": [
+        (1, 100),   # Good: 0-100
+        (2, 200),   # Fair: 100-200
+        (3, 350),   # Moderate: 200-350
+        (4, 500),   # Poor: 350-500
+        (5, 750),   # Very Poor: 500-750
+        (6, float("inf"))  # Extremely Poor: ≥750
+    ],
+}
 
 EAQI_LEVELS = {
     0: "Error/N/A",
-    25: "Good",
-    50: "Fair",
-    75: "Poor",
-    100: "Very Poor",
-}
-
-EAQI_BANDS = {
-    # Concentration breakpoints (µg/m³) and the corresponding AQI sub-index value
-    # Format: (AQI_Value, Upper_Concentration_Limit)
-    "PM10": [
-        (20, 10), (35, 20), (50, 25), (70, 50), (100, 90),
-        (150, 180), (200, 360), (300, 540), (500, 900)
-    ],
-    "PM2_5": [
-        (20, 5), (35, 10), (50, 15), (70, 25), (100, 50),
-        (150, 90),(200, 180), (300, 270), (500, 450)
-    ],
-    "O3": [
-        (20, 60), (35, 100), (50, 140), (70, 180), (100, 240),
-        (150, 300), (200, 400), (300, 500), (500, 600)
-    ],
-    "NO2": [
-        (20, 40), (35, 100), (50, 200), (70, 400), (100, 700),
-        (150, 1200), (200, 1700), (300, 2200), (500, 2700)
-    ],
-    "SO2": [
-        (20, 50), (35, 100), (50, 200), (70, 350), (100, 500),
-        (150, 750), (200, 1000), (300, 1300), (500, 1600)
-    ],
+    1: "Good",
+    2: "Fair",
+    3: "Moderate",
+    4: "Poor",
+    5: "Very Poor",
+    6: "Extremely Poor",
 }
