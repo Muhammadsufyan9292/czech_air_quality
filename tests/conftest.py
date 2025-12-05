@@ -37,118 +37,240 @@ def mock_data_manager():
 
 @pytest.fixture
 def mock_stations():
-    """Provide realistic mock station data."""
+    """Provide realistic mock station data"""
     return [
         {
-            "Name": "Prague - Vinohrady",
-            "LocalityCode": "1",
-            "Region": "Prague",
-            "Latitude": 50.0755,
-            "Longitude": 14.4378,
-            "IdRegistrations": ["1001", "1002"],
+            "Name": "Ostrava-Fifejdy",
+            "LocalityCode": "TOFF",
+            "Region": "Moravskoslezský",
+            "Lat": 49.83918762207031,
+            "Lon": 18.263689041137695,
+            "IdRegistrations": [40555, 40557, 40560, 40559, 40561, 1648691],
         },
         {
-            "Name": "Brno",
-            "LocalityCode": "2",
-            "Region": "South Moravia",
-            "Latitude": 49.1951,
-            "Longitude": 16.6068,
-            "IdRegistrations": ["2001", "2002"],
+            "Name": "Beroun",
+            "LocalityCode": "SBER",
+            "Region": "Středočeský",
+            "Lat": 49.95792770385742,
+            "Lon": 14.058300018310547,
+            "IdRegistrations": [40851, 40853, 40852, 40848, 40854, 1648793],
         },
         {
-            "Name": "Ostrava",
-            "LocalityCode": "3",
-            "Region": "Moravia-Silesia",
-            "Latitude": 49.8209,
-            "Longitude": 18.2625,
-            "IdRegistrations": ["3001", "3002"],
+            "Name": "Bělotín",
+            "LocalityCode": "MBEL",
+            "Region": "Olomoucký",
+            "Lat": 49.58708190917969,
+            "Lon": 17.80422019958496,
+            "IdRegistrations": [1379571, 1379567, 1648706],
         },
     ]
 
 
 @pytest.fixture
 def mock_measurements():
-    """Provide realistic mock measurement data."""
+    """Provide realistic mock measurement data"""
     return {
-        "1001": {
-            "ComponentCode": "PM10",
-            "ComponentName": "Particulate matter < 10 µm",
-            "Unit": "µg/m³",
-            "value": "25.5",
-        },
-        "1002": {
-            "ComponentCode": "O3",
-            "ComponentName": "Ozone",
-            "Unit": "µg/m³",
-            "value": "75.0",
-        },
-        "2001": {
-            "ComponentCode": "PM10",
-            "ComponentName": "Particulate matter < 10 µm",
-            "Unit": "µg/m³",
-            "value": "30.2",
-        },
-        "2002": {
-            "ComponentCode": "NO2",
-            "ComponentName": "Nitrogen dioxide",
-            "Unit": "µg/m³",
-            "value": "45.8",
-        },
-        "3001": {
-            "ComponentCode": "PM2_5",
-            "ComponentName": "Fine particulate matter",
-            "Unit": "µg/m³",
-            "value": "15.3",
-        },
-        "3002": {
+        "40555": {
             "ComponentCode": "SO2",
-            "ComponentName": "Sulfur dioxide",
-            "Unit": "µg/m³",
-            "value": "5.0",
+            "ComponentName": "oxid siřičitý",
+            "Unit": "µg∙m⁻³",
+            "value": "1.3",
+        },
+        "40557": {
+            "ComponentCode": "NO2",
+            "ComponentName": "oxid dusičitý",
+            "Unit": "µg∙m⁻³",
+            "value": "27.0",
+        },
+        "40560": {
+            "ComponentCode": "NOx",
+            "ComponentName": "oxidy dusíku",
+            "Unit": "µg∙m⁻³",
+            "value": "113.2",
+        },
+        "40559": {
+            "ComponentCode": "O3",
+            "ComponentName": "přízemní ozon",
+            "Unit": "µg∙m⁻³",
+            "value": "1.0",
+        },
+        "40561": {
+            "ComponentCode": "PM10",
+            "ComponentName": "částice PM10",
+            "Unit": "µg∙m⁻³",
+            "value": "58.3",
+        },
+        "1648691": {
+            "ComponentCode": "INDX",
+            "ComponentName": "Index kvality ovzduší",
+            "Unit": "",
+            "value": "3.0",
+        },
+        "40851": {
+            "ComponentCode": "NO2",
+            "ComponentName": "oxid dusičitý",
+            "Unit": "µg∙m⁻³",
+            "value": "14.9",
+        },
+        "40853": {
+            "ComponentCode": "NOx",
+            "ComponentName": "oxidy dusíku",
+            "Unit": "µg∙m⁻³",
+            "value": "20.3",
+        },
+        "40852": {
+            "ComponentCode": "CO",
+            "ComponentName": "oxid uhelnatý",
+            "Unit": "µg∙m⁻³",
+            "value": "349.0",
+        },
+        "40848": {
+            "ComponentCode": "PM2_5",
+            "ComponentName": "jemné částice PM2,5",
+            "Unit": "µg∙m⁻³",
+            "value": "14.8",
+        },
+        "40854": {
+            "ComponentCode": "PM10",
+            "ComponentName": "částice PM10",
+            "Unit": "µg∙m⁻³",
+            "value": "21.3",
+        },
+        "1648793": {
+            "ComponentCode": "INDX",
+            "ComponentName": "Index kvality ovzduší",
+            "Unit": "",
+            "value": "2.0",
+        },
+        "1379571": {
+            "ComponentCode": "NO2",
+            "ComponentName": "oxid dusičitý",
+            "Unit": "µg∙m⁻³",
+            "value": "7.2",
+        },
+        "1379567": {
+            "ComponentCode": "PM10",
+            "ComponentName": "částice PM10",
+            "Unit": "µg∙m⁻³",
+            "value": "15.1",
+        },
+        "1648706": {
+            "ComponentCode": "INDX",
+            "ComponentName": "Index kvality ovzduší",
+            "Unit": "",
+            "value": "1.0",
         },
     }
 
 
 @pytest.fixture
 def mock_metadata():
-    """Provide realistic mock metadata structure."""
+    """Provide realistic mock metadata structure"""
     return {
         "Localities": [
             {
-                "Name": "Prague - Vinohrady",
-                "LocalityCode": "1",
-                "Region": "Prague",
-                "Latitude": 50.0755,
-                "Longitude": 14.4378,
-                "IdRegistrations": ["1001", "1002"],
+                "Name": "Ostrava-Fifejdy",
+                "LocalityCode": "TOFF",
+                "Region": "Moravskoslezský",
+                "Lat": 49.83918762207031,
+                "Lon": 18.263689041137695,
+                "IdRegistrations": [40555, 40557, 40560, 40559, 40561, 1648691],
                 "MeasuringPrograms": [],
             },
             {
-                "Name": "Brno",
-                "LocalityCode": "2",
-                "Region": "South Moravia",
-                "Latitude": 49.1951,
-                "Longitude": 16.6068,
-                "IdRegistrations": ["2001", "2002"],
+                "Name": "Beroun",
+                "LocalityCode": "SBER",
+                "Region": "Středočeský",
+                "Lat": 49.95792770385742,
+                "Lon": 14.058300018310547,
+                "IdRegistrations": [40851, 40853, 40852, 40848, 40854, 1648793],
+                "MeasuringPrograms": [],
+            },
+            {
+                "Name": "Bělotín",
+                "LocalityCode": "MBEL",
+                "Region": "Olomoucký",
+                "Lat": 49.58708190917969,
+                "Lon": 17.80422019958496,
+                "IdRegistrations": [1379571, 1379567, 1648706],
                 "MeasuringPrograms": [],
             },
         ],
         "id_registration_to_component": {
-            "1001": {
-                "ComponentCode": "PM10",
-                "ComponentName": "Particulate matter < 10 µm",
-                "Unit": "µg/m³",
+            "40555": {
+                "ComponentCode": "SO2",
+                "ComponentName": "oxid siřičitý",
+                "Unit": "µg∙m⁻³",
             },
-            "1002": {"ComponentCode": "O3", "ComponentName": "Ozone", "Unit": "µg/m³"},
-            "2001": {
-                "ComponentCode": "PM10",
-                "ComponentName": "Particulate matter < 10 µm",
-                "Unit": "µg/m³",
-            },
-            "2002": {
+            "40557": {
                 "ComponentCode": "NO2",
-                "ComponentName": "Nitrogen dioxide",
-                "Unit": "µg/m³",
+                "ComponentName": "oxid dusičitý",
+                "Unit": "µg∙m⁻³",
+            },
+            "40560": {
+                "ComponentCode": "NOx",
+                "ComponentName": "oxidy dusíku",
+                "Unit": "µg∙m⁻³",
+            },
+            "40559": {
+                "ComponentCode": "O3",
+                "ComponentName": "přízemní ozon",
+                "Unit": "µg∙m⁻³",
+            },
+            "40561": {
+                "ComponentCode": "PM10",
+                "ComponentName": "částice PM10",
+                "Unit": "µg∙m⁻³",
+            },
+            "1648691": {
+                "ComponentCode": "INDX",
+                "ComponentName": "Index kvality ovzduší",
+                "Unit": "",
+            },
+            "40851": {
+                "ComponentCode": "NO2",
+                "ComponentName": "oxid dusičitý",
+                "Unit": "µg∙m⁻³",
+            },
+            "40853": {
+                "ComponentCode": "NOx",
+                "ComponentName": "oxidy dusíku",
+                "Unit": "µg∙m⁻³",
+            },
+            "40852": {
+                "ComponentCode": "CO",
+                "ComponentName": "oxid uhelnatý",
+                "Unit": "µg∙m⁻³",
+            },
+            "40848": {
+                "ComponentCode": "PM2_5",
+                "ComponentName": "jemné částice PM2,5",
+                "Unit": "µg∙m⁻³",
+            },
+            "40854": {
+                "ComponentCode": "PM10",
+                "ComponentName": "částice PM10",
+                "Unit": "µg∙m⁻³",
+            },
+            "1648793": {
+                "ComponentCode": "INDX",
+                "ComponentName": "Index kvality ovzduší",
+                "Unit": "",
+            },
+            "1379571": {
+                "ComponentCode": "NO2",
+                "ComponentName": "oxid dusičitý",
+                "Unit": "µg∙m⁻³",
+            },
+            "1379567": {
+                "ComponentCode": "PM10",
+                "ComponentName": "částice PM10",
+                "Unit": "µg∙m⁻³",
+            },
+            "1648706": {
+                "ComponentCode": "INDX",
+                "ComponentName": "Index kvality ovzduší",
+                "Unit": "",
             },
         },
     }
@@ -162,12 +284,8 @@ def temp_cache_dir():
 
 
 def pytest_configure(config):
-    """Configure pytest options."""
+    """Configure pytest options and register custom markers."""
     config.addinivalue_line("testpaths", "tests")
-
-
-def pytest_configure(config):
-    """Register custom pytest markers."""
     config.addinivalue_line("markers", "unit: mark test as a unit test")
     config.addinivalue_line("markers", "integration: mark test as an integration test")
     config.addinivalue_line("markers", "slow: mark test as slow running")
