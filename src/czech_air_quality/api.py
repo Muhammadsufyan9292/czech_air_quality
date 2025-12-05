@@ -65,6 +65,8 @@ class AirQuality(AirQualityCalculations):
         :param request_timeout: Timeout in seconds for CHMI data download requests
         :type request_timeout: int
         """
+        super().__init__()
+
         self._region_filter = region_filter.lower() if region_filter else None
         self._data = {}
         self._all_stations = []
