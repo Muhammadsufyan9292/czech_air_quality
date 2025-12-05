@@ -36,6 +36,7 @@ include-naming-hint=yes
 [CLASSES]
 
 check-protected-access-in-special-methods=yes
+exclude-protected = _data_manager, _load_and_parse_data
 
 [MISCELLANEOUS]
 
