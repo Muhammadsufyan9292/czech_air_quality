@@ -20,7 +20,6 @@ import unittest
 from urllib.parse import urlparse
 
 # Discouraged, but let's do it for the sake of readibility
-# pylint: disable=wildcard-import
 from src.czech_air_quality.const import *
 from src.czech_air_quality import __version__
 
