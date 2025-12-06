@@ -52,14 +52,18 @@ class AirQuality(AirQualityCalculations):
         """
         Initialize the Air Quality client.
 
-        :param auto_load: If True, load/download data immediately during initialization
+        :param auto_load: If True, load/download data immediately during initialization.
+                         If False, data loads on first method call.
         :type auto_load: bool
         :param region_filter: Limit stations to specific region (case-insensitive).
         :type region_filter: str, optional
         :param use_nominatim: If True, enable Nominatim geocoding for city name lookups.
                              If False, only exact station name matches are accepted.
         :type use_nominatim: bool
-        :param neighbour_station_limit: Maximum number of close neighbouring stations to merge pollutants from.
+        :param neighbour_station_limit: Maximum number of nearby stations to check when 
+                                        searching for pollutant data. Useful
+                                        with use_nominatim=True to find data if nearest
+                                        station doesn't report requested pollutant.
         :type neighbour_station_limit: int
         :param nominatim_timeout: Timeout in seconds for Nominatim geocoding requests
         :type nominatim_timeout: int
@@ -67,6 +71,15 @@ class AirQuality(AirQualityCalculations):
         :type request_timeout: int
         :param disable_caching: If True, skip all caching and always download fresh data
         :type disable_caching: bool
+
+        Caching Strategy:
+
+        1. Cache Hit (Recent): If cached data is < 20 minutes old, use it immediately
+        2. ETag Validation: If cache is > 20 minutes old, perform HTTP-HEAD request with ETag
+           - If server returns 304 (Not Modified), trust cache for another 20 minutes
+           - If server returns 200 (Modified), download full fresh data
+        3. Network Error: If network unavailable but cache exists, use stale cache with warning
+        4. Force Refresh: `force_fetch_fresh()` bypasses age check but respects ETags
         """
         super().__init__()
 
@@ -110,7 +123,7 @@ class AirQuality(AirQualityCalculations):
         Get all known air quality station names by creating temporary a client instance.
 
         :return: List of station names, or empty list if data cannot be retrieved
-        :rtype: list[str | None]
+        :rtype: ``list[str | None]``
         """
         try:
             temp_instance = cls()
@@ -139,7 +152,7 @@ class AirQuality(AirQualityCalculations):
         """
         Timestamp when data was last updated by the CHMI source.
 
-        :rtype: datetime
+        :rtype: ``datetime``
         """
         return self._data_manager.actualized_time
 
@@ -148,8 +161,8 @@ class AirQuality(AirQualityCalculations):
         """
         Check if cached data is still valid via ETag validation.
 
-        :return: `True` if cached data is current; `False` if needs refresh
-        :rtype: bool
+        :return: ``True`` if cached data is current; ``False`` if needs refresh
+        :rtype: ``bool``
         """
         return self._data_manager.is_data_fresh()
 
@@ -159,7 +172,7 @@ class AirQuality(AirQualityCalculations):
         Get all available air quality stations.
 
         :return: List of station dictionaries, filtered by region if set
-        :rtype: list[dict]
+        :rtype: ``list[dict]``
         """
         return self._all_stations
 
@@ -169,7 +182,7 @@ class AirQuality(AirQualityCalculations):
         Map of pollutant codes to (code, name, unit) tuples.
 
         :return: Dictionary with pollutant code as key
-        :rtype: dict[str, tuple[str, str, str]]
+        :rtype: ``dict[str, tuple[str, str, str]]``
         """
         return self._component_lookup
 
@@ -179,7 +192,7 @@ class AirQuality(AirQualityCalculations):
         Raw parsed data from the JSON source.
 
         :return: Dictionary containing localities and measurements
-        :rtype: dict
+        :rtype: ``dict``
         """
         return self._data
 
@@ -189,14 +202,17 @@ class AirQuality(AirQualityCalculations):
         """
         Find air quality station nearest to a city.
 
-        If use_nominatim is enabled, geocodes the city name to coordinates and
-        calculates distances. Otherwise, matches exact station names only.
+        If ``use_nominatim=True``, geocodes the city name to coordinates and
+        calculates distances to all stations. Otherwise, matches exact station names only 
+        (e.g. "Prague - Letná").
 
-        :param city_name: Name of the city or exact station name to search for
+        :param city_name: Name of the city or exact station name
         :type city_name: str
-        :return: (station_dict, distance_km) tuple with station metadata and distance
-        :rtype: tuple[dict, float]
-        :raises StationNotFoundError: If city not found or no nearby stations exist
+
+        :return: Tuple of (``station_dict``, ``distance_km``) with station metadata and distance
+        :rtype: ``tuple[dict, float]``
+
+        :raises StationNotFoundError: If city/station not found or no nearby stations exist
         """
         return self._get_nearest_station_to_city(city_name)
 
@@ -209,32 +225,27 @@ class AirQuality(AirQualityCalculations):
         :param city_name: City name to search for
         :type city_name: str
         :return: Air quality report dictionary with keys:
-                - city_searched (str): Original search term
-                - station_name (str): Name of station providing data
-                - station_code (str): Station locality code
-                - region (str): region name
-                - distance_km (str): Distance from city to station in kilometers
-                - air_quality_index_code (int): EAQI level (0-6, 0 if no data)
-                - air_quality_index_description (str): Human description (e.g., 'Good', 'Poor')
-                - actualized_time_utc (str): ISO format UTC timestamp of data
-                - measurements (list[dict]): List of pollutant measurements with:
-                    * pollutant_code (str): Code like 'PM10', 'O3'
-                    * pollutant_name (str): Full name
-                    * unit (str): Unit of measurement
-                    * value (float|None): Numeric value
-                    * sub_aqi (int): Sub-index level for this pollutant (0 if no data)
-                    * formatted_measurement (str): Display string
-                - Error (str): [Optional] Error message if lookup failed
-        :rtype: dict
 
-        **EAQI Scale (0-6):**
-        - 0: Error/N/A (no data available)
-        - 1: Good (favorable air quality)
-        - 2: Fair (acceptable quality)
-        - 3: Moderate (some concern)
-        - 4: Poor (at-risk groups should limit outdoor exposure)
-        - 5: Very Poor (general population should reduce outdoor exposure)
-        - 6: Extremely Poor (significant health risk for all)
+            - **city_searched (str)**: Original search term
+            - **station_name (str)**: Name of station providing data
+            - **station_code (str)**: Station locality code
+            - **region (str)**: Region name
+            - **distance_km (str)**: Distance from city to station in kilometers
+            - **air_quality_index_code (int)**: EAQI level (0-6, 0 if no data)
+            - **air_quality_index_description (str)**: Human description (e.g., 'Good', 'Poor')
+            - **actualized_time_utc (str)**: ISO format UTC timestamp of data
+            - **measurements (list[dict])**: List of pollutant measurements:
+
+              - **pollutant_code (str)**: Code like 'PM10', 'O3'
+              - **pollutant_name (str)**: Full name
+              - **unit (str)**: Unit of measurement
+              - **value (float|None)**: Numeric value
+              - **sub_aqi (int)**: Sub-index level for this pollutant
+              - **formatted_measurement (str)**: Display string
+
+            - ``Error (str)``: Error message if lookup failed
+
+        :rtype: ``dict``
         """
         try:
             station_data, distance_km = self._get_nearest_station_to_city(city_name)
@@ -270,23 +281,26 @@ class AirQuality(AirQualityCalculations):
         :param city_name: City name to search for
         :type city_name: str
         :param pollutant_code: Pollutant code to retrieve (case-insensitive):
-                              - 'PM10': Particulate matter < 10 µm
-                              - 'PM2.5': Fine particulate matter < 2.5 µm  
-                              - 'O3': Ozone
-                              - 'NO2': Nitrogen dioxide
-                              - 'SO2': Sulfur dioxide
+
+            - 'PM10': Particulate matter < 10 µm
+            - 'PM2.5': Fine particulate matter < 2.5 µm  
+            - 'O3': Ozone
+            - 'NO2': Nitrogen dioxide
+            - 'SO2': Sulfur dioxide
+
         :type pollutant_code: str
         :return: Measurement dictionary with keys:
-                - city_searched (str): Original search term
-                - station_name (str): Station name(s) that provided the measurement 
-                - pollutant_code (str): Normalized pollutant code
-                - pollutant_name (str): Full pollutant name
-                - unit (str): Unit of measurement (e.g., 'µg/m³')
-                - value (float|None): Numeric measurement value
-                - measurement_status (str): Status string (e.g., 'Measured', 'No Data')
-                - formatted_measurement (str): Display string (e.g., '12.5 µg/m³')
-        :rtype: dict
 
+            - **city_searched (str)**: Original search term
+            - **station_name (str)**: Station name(s) that provided the measurement
+            - **pollutant_code (str)**: Normalized pollutant code
+            - **pollutant_name (str)**: Full pollutant name
+            - **unit (str)**: Unit of measurement (e.g., 'µg/m³')
+            - **value (float|None)**: Numeric measurement value
+            - **measurement_status (str)**: Status string (e.g., 'Measured', 'No Data')
+            - **formatted_measurement (str)**: Display string (e.g., '12.5 µg/m³')
+
+        :rtype: ``dict``
         :raises StationNotFoundError: If city not found or no nearby stations exist
         :raises PollutantNotReportedError: If pollutant is not measured at any station
         """
@@ -335,12 +349,14 @@ class AirQuality(AirQualityCalculations):
     @_ensure_loaded
     def get_air_quality_index(self, city_name: str) -> tuple[int, str]:
         """
-        Get EAQI (European Air Quality Index) for a city using the 0-6 scale.
+        Get EAQI for a city using the 0-6 scale.
+
+        Returns the highest sub-index across all measured pollutants (PM10, PM2.5, O3, NO2, SO2).
 
         :param city_name: Name of the city
         :type city_name: str
-        :return: Tuple of (EAQI level (0-6), description)
-        :rtype: tuple[int, str]
+        :return: Tuple of (EAQI level 0-6, description)
+        :rtype: ``tuple[int, str]``
         """
         aqi_level = self._get_aqi(city_name)
 
@@ -349,10 +365,12 @@ class AirQuality(AirQualityCalculations):
 
     def force_fetch_fresh(self) -> None:
         """
-        Force fetching fresh data from the source without having to deal
-        with the delay window.
-        
-        Will still use cached data if server indicates no changes via ETag.
+        Force fetching fresh data from the source without waiting for the internal cache timer.
+
+        Bypasses the normal 20-minute cache timeout and immediately requests fresh data from CHMI.
+        Still uses cached data if server returns 304 (Not Modified) via ETag validation.
+
+        :raises DataDownloadError: If network error occurs and no cache is available
         """
         self._data_manager.ensure_latest_data()
         self._load_and_parse_data()
