@@ -21,6 +21,7 @@ and processing air quality data from the CHMI OpenData portal.
 """
 
 import warnings
+from importlib.metadata import version
 
 def _warn(message: str) -> None:
     """
@@ -33,7 +34,7 @@ def _warn(message: str) -> None:
         stacklevel=2
     )
 
-__version__ = "1.0.1"
+__version__ = version("czech_air_quality")
 
 from .exceptions import (
     AirQualityError,
