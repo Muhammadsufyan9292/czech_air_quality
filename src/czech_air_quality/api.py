@@ -116,22 +116,6 @@ class AirQuality(AirQualityCalculations):
             return []
 
     @staticmethod
-    def _deprecated(func):
-        """
-        Decorator to mark functions as deprecated.
-        """
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            _warn(
-                f"Call to deprecated function '{func.__name__}'. "
-                "Please update your code.",
-                category=DeprecationWarning
-            )
-            return func(*args, **kwargs)
-
-        return wrapper
-
-    @staticmethod
     def _ensure_loaded(func):
         """
         Ensure data is fresh and loaded before executing a public method.
@@ -411,12 +395,3 @@ class AirQuality(AirQualityCalculations):
         self._data_manager.ensure_latest_data()
         self._load_and_parse_data()
 
-
-    @_deprecated
-    def ensure_data_loaded(self) -> None:
-        """
-        Deprecated. 
-        
-        Wrapper of force_fetch_fresh()
-        """
-        self.force_fetch_fresh()
