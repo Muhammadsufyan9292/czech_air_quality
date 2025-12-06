@@ -198,27 +198,6 @@ class AirQuality(AirQualityCalculations):
 
 
     @_ensure_loaded
-    def get_station_capabilities(self, city_name: str) -> list[str | None]:
-        """
-        Get pollutant codes measured by the nearest station.
-
-        :param city_name: City name to search for
-        :type city_name: str
-        :return: List of pollutant codes (e.g., ['PM10', 'O3'])
-        :rtype: list[str | None]
-        :raises StationNotFoundError: If station not found
-        """
-        station_data, _ = self._get_nearest_station_to_city(city_name)
-        measurements = self._get_station_measurements(station_data)
-
-        return [
-            meas.get("ComponentCode")
-            for meas in measurements
-            if meas.get("ComponentCode")
-        ]
-
-
-    @_ensure_loaded
     def get_air_quality_report(self, city_name: str) -> dict:
         """
         Get comprehensive air quality report with EAQI (European Air Quality Index) for a city.
@@ -369,20 +348,6 @@ class AirQuality(AirQualityCalculations):
         :rtype: int
         """
         return self._get_aqi(city_name)
-
-
-    @_ensure_loaded
-    def get_city_coordinates(self, city_name: str) -> tuple[float, float] | None:
-        """
-        Get geographic coordinates for a city.
-        Uses local cache, then Nominatim geocoding if enabled.
-
-        :param city_name: City name to geocode
-        :type city_name: str
-        :return: (latitude, longitude) tuple or None
-        :rtype: tuple[float, float] | None
-        """
-        return self._get_city_coordinates_internal(city_name)
 
 
     def force_fetch_fresh(self) -> None:
