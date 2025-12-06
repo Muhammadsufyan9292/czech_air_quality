@@ -29,7 +29,11 @@ print(f"AQI: {aqi_level} ({description})")
 # Output: "AQI: 3 (Moderate)"
 ```
 
----
+## API documentation
+References/docs can be found below, this library also 
+supports full typing hints:
+
+https://czech-air-quality.readthedocs.io
 
 ## Data Source
 Data from CHMI (Czech Hydrometeorological Institute) OpenData portal, updated hourly.
