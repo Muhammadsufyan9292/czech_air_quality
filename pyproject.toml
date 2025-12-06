@@ -42,5 +42,11 @@ dev = [
     "pylint>=4.0.3",
 ]
 
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=2.0.0",
+    "sphinx-autodoc-typehints>=1.25.0",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
