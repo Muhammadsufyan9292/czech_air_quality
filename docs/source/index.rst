@@ -20,3 +20,9 @@ Quick Example
     # Get air quality report for a city
     report = aq.get_air_quality_report("Prague")
     print(report)
+
+Useful Links
+============
+
+- `PyPi package page <https://pypi.org/project/czech-air-quality/>`_
+- `GitHub Repository <https://github.com/chickendrop89/czech_air_quality>`_
