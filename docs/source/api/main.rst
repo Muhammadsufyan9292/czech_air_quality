@@ -1,5 +1,5 @@
-Main API
-========
+Classes
+=======
 
 The main entry point for the library is the ``AirQuality`` class.
 

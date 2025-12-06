@@ -1,28 +1,31 @@
-API Reference
+API References
 =============
-
-The czech_air_quality package provides a simple client for accessing air quality data:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Public API:
 
    main
    exceptions
 
 Caching Strategy:
 ~~~~~~~~~~~~~~~~~
+To prevent overloading the OpenData servers on every call, and to improve performance,
+this library uses a caching mechanism with the following strategy:
 
 - **Cache Hit (Recent):** If cached data is =<20 minutes old, use it immediately
 - **ETag Validation:** If cache is >=20 minutes old, perform HTTP-HEAD request with ETag
     - If server returns **304 (Not Modified)**, trust cache for another 20 minutes
     - If server returns **200 (Modified)**, download full data
 - **Network Error:** If network unavailable but cache exists, use stale cache with warning
-- **Force Refresh:** ``force_fetch_fresh()`` bypasses age check but respects ETags
-- **Disable Caching:** Use ``disable_caching=True`` to always fetch fresh data
+
+This can be customized:
+    - **Force Refreshing:** ``force_fetch_fresh()`` bypasses the age check
+    - **Disabling Caching:** By using ``disable_caching=True`` to always fetch fresh data
 
 EAQI scale
 ~~~~~~~~~~
+- EAQI reported by this library is the highest sub-index among all pollutants.
+
 .. code-block:: python
     :linenos:
 
@@ -73,6 +76,8 @@ EAQI scale
 
 Usable regions
 ~~~~~~~~~~~~~~
+- Lowercase strings can be used as well
+
 .. code-block:: python
     :linenos:
 
@@ -95,7 +100,7 @@ Usable regions
 
 Debugging
 ~~~~~~~~~
-This library uses the standard Python logging module for debugging.
+- This library uses the standard Python logging module for debugging.
 
 .. code-block:: python
     :linenos:

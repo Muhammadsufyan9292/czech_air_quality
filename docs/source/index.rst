@@ -1,6 +1,8 @@
 Czech_air_quality documentation
 ================================
 
+A python library for retrieving and parsing air quality data from the CHMI opendata portal.
+
 .. toctree::
    :maxdepth: 2
    :caption: Table of contents:
