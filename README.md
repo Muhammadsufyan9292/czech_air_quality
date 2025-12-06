@@ -33,9 +33,9 @@ pip install czech_air_quality
 from czech_air_quality import AirQuality
 
 client = AirQuality()
-aqi = client.get_air_quality_index("Prague")
-print("AQI level:", aqi)
-# Output: "AQI level: 3"
+aqi_level, description = client.get_air_quality_index("Prague")
+print(f"AQI: {aqi_level} ({description})")
+# Output: "AQI: 3 (Moderate)"
 ```
 
 ---
@@ -150,7 +150,7 @@ print("Distance:", distance, "km")
 Get the overall EAQI for the nearest station to a city.
 
 ```python
-def get_air_quality_index(city_name: str) -> int
+def get_air_quality_index(city_name: str) -> tuple[int, str]
 ```
 
 **Parameters:**
@@ -160,7 +160,7 @@ def get_air_quality_index(city_name: str) -> int
 | `city_name` | `str` | Name of the city |
 
 **Returns:**
-- `int` - EAQI level (0-6)
+- `tuple[int, str]` - Tuple of (EAQI level 0-6, description string)
 
 **Details:**
 - Returns the highest sub-index across all measured pollutants
@@ -179,22 +179,11 @@ def get_air_quality_index(city_name: str) -> int
 
 **Example:**
 ```python
-aqi = client.get_air_quality_index("Ostrava")
-print("Air Quality Index for Ostrava:", aqi)
-
-if aqi == 1:
-    status = "Good"
-elif aqi == 2:
-    status = "Fair"
-# ...etc
-else:
-    status = "Error/No data"
-
-print("Status:", status)
+aqi_level, description = client.get_air_quality_index("Ostrava")
+print(f"AQI: {aqi_level} ({description})")
 
 # Output:
-# Air Quality Index for Ostrava: 2
-# Status: Fair
+# AQI: 2 (Fair)
 ```
 
 #### `get_air_quality_report(city_name)`
@@ -458,25 +447,8 @@ print("Distance:", distance, "km")
 
 ### Example 3: Get Air Quality Index
 ```python
-aqi = client.get_air_quality_index("Prague")
-print("AQI:", aqi)
-
-if aqi == 1:
-    status = "Good"
-elif aqi == 2:
-    status = "Fair"
-elif aqi == 3:
-    status = "Moderate"
-elif aqi == 4:
-    status = "Poor"
-elif aqi == 5:
-    status = "Very Poor"
-elif aqi == 6:
-    status = "Extremely Poor"
-else:
-    status = "Error/No data"
-
-print("AQI description:", status)
+aqi_level, description = client.get_air_quality_index("Prague")
+print(f"AQI: {aqi_level} ({description})")
 ```
 
 ### Example 4: Get Full Report

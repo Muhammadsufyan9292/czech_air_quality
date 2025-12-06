@@ -333,25 +333,18 @@ class AirQuality(AirQualityCalculations):
 
 
     @_ensure_loaded
-    def get_air_quality_index(self, city_name: str) -> int:
+    def get_air_quality_index(self, city_name: str) -> tuple[int, str]:
         """
         Get EAQI (European Air Quality Index) for a city using the 0-6 scale.
 
-        EAQI levels:
-        - 0 = Error/N/A
-        - 1 = Good
-        - 2 = Fair
-        - 3 = Moderate
-        - 4 = Poor
-        - 5 = Very Poor
-        - 6 = Extremely Poor
-
-        :param city_name: City name to search for
+        :param city_name: Name of the city
         :type city_name: str
-        :return: EAQI level (0-6)
-        :rtype: int
+        :return: Tuple of (EAQI level (0-6), description)
+        :rtype: tuple[int, str]
         """
-        return self._get_aqi(city_name)
+        aqi_level = self._get_aqi(city_name)
+
+        return aqi_level, const.EAQI_LEVELS.get(aqi_level, "Error/N/A")
 
 
     def force_fetch_fresh(self) -> None:
