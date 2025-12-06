@@ -22,14 +22,14 @@ and processing air quality data from the CHMI OpenData portal.
 
 import warnings
 
-def _warn(message: str, category: Warning = RuntimeWarning) -> None:
+def _warn(message: str) -> None:
     """
     Wrapper for python warnings generated
     by this library for the developer
     """
     warnings.warn(
         message,
-        category=category,
+        category=RuntimeWarning,
         stacklevel=2
     )
 
