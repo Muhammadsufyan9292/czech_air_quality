@@ -41,22 +41,20 @@ class AirQuality(AirQualityCalculations):
     """
     def __init__(
         self,
-        region_filter=None,
-        disable_caching=False,
         auto_load=True,
+        region_filter=None,
         use_nominatim=True,
         nominatim_timeout=const.NOMINATIM_TIMEOUT,
-        request_timeout=const.REQUEST_TIMEOUT
+        request_timeout=const.REQUEST_TIMEOUT,
+        disable_caching=False
     ):
         """
         Initialize the Air Quality client.
 
-        :param region_filter: Limit stations to specific region (case-insensitive).
-        :type region_filter: str, optional
-        :param disable_caching: If True, skip all caching and always download fresh data
-        :type disable_caching: bool
         :param auto_load: If True, load/download data immediately during initialization
         :type auto_load: bool
+        :param region_filter: Limit stations to specific region (case-insensitive).
+        :type region_filter: str, optional
         :param use_nominatim: If True, enable Nominatim geocoding for city name lookups.
                              If False, only exact station name matches are accepted.
         :type use_nominatim: bool
@@ -64,6 +62,8 @@ class AirQuality(AirQualityCalculations):
         :type nominatim_timeout: int
         :param request_timeout: Timeout in seconds for CHMI data download requests
         :type request_timeout: int
+        :param disable_caching: If True, skip all caching and always download fresh data
+        :type disable_caching: bool
         """
         super().__init__()
 
