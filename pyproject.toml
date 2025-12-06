@@ -5,13 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "czech_air_quality"
 version = "1.0.1"
-description = "A python library for retrieving and parsing air quality data from the chmi opendata portal."
+description = "A python library for retrieving and parsing air quality data from the CHMI opendata portal."
 readme = "README.md"
 authors = [
     { name = "chickendrop89", email = "chickendrop89@gmail.com" }
 ]
 license = { file = "LICENSE" }
-keywords = ["air-quality", "chmi", "czechia", "pollution", "aqi", "eaqi", "geopy"]
+keywords = ["air-quality", "chmi", "czechia", "pollution", "aqi", "eaqi", "geopy", "isko"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Development Status :: 5 - Production/Stable",
@@ -33,7 +33,7 @@ dependencies = [
 Repository = "https://github.com/chickendrop89/czech_air_quality"
 Issues     = "https://github.com/chickendrop89/czech_air_quality/issues"
 Changelog  = "https://github.com/chickendrop89/czech_air_quality/blob/master/CHANGELOG.md"
-Homepage   = "https://github.com/chickendrop89/czech_air_quality/blob/master/README.md"
+Homepage   = "https://czech-air-quality.readthedocs.io"
 
 [project.optional-dependencies]
 dev = [
