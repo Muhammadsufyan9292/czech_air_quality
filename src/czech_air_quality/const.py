@@ -18,6 +18,8 @@ Data constants of the library.
 
 from . import __version__
 
+###########################
+
 AQ_DATA_URL  = "https://opendata.chmi.cz/air_quality/now/data/airquality_1h_avg_CZ.csv"
 METADATA_URL = "https://opendata.chmi.cz/air_quality/now/metadata/metadata.json"
 
@@ -26,29 +28,48 @@ ETAG_URLS = {
     "metadata_etag": METADATA_URL
 }
 
+###########################
+
 CACHE_DIR_NAME = "czech_air_quality"
 CACHE_FILE_NAME = "airquality_opendata_cache.json"
 CACHE_METADATA_KEY = "__cache_metadata__"
+
 TIMESTAMP_KEY = "timestamp"
 ETAGS_KEY = "etags"
 
+###########################
+
 USER_AGENT = f"python-czech_air_quality/{__version__}"
-NOMINATIM_TIMEOUT = 10
-REQUEST_TIMEOUT = 20
 REQUEST_HEADERS = {
      "User-Agent": USER_AGENT,
      "Accept": "text/csv, application/json, application/octet-stream"
-} # text/csv is for futureproofing
+}
+REQUEST_TIMEOUT = 20
+NOMINATIM_TIMEOUT = 10
+
+###########################
 
 # Threshold for pollutant values considered as Error/N/A
 # Value that is X or above will be accepted
 CHMI_ERROR_THRESHOLD = 1.1
 
-# Maximum number of neighbour stations to merge pollutants from
+# Maximum number of neighbour stations to consider merging 
+# pollutants from
 CHMI_NEIGHBOUR_LIMIT = 20
 
+###########################
+
+EAQI_LEVELS = {
+    0: "Error/N/A",
+    1: "Good",
+    2: "Fair",
+    3: "Moderate",
+    4: "Poor",
+    5: "Very Poor",
+    6: "Extremely Poor",
+}
+
 EAQI_BANDS = {
-    # EAQI Standard 0-6 Scale
     # Concentration breakpoints (µg/m³) and the corresponding EAQI level (1-6)
     # Format: (EAQI_Level, Upper_Concentration_Limit)
     "PM10": [
@@ -91,14 +112,4 @@ EAQI_BANDS = {
         (5, 750),   # Very Poor: 500-750
         (6, float("inf"))  # Extremely Poor: ≥750
     ],
-}
-
-EAQI_LEVELS = {
-    0: "Error/N/A",
-    1: "Good",
-    2: "Fair",
-    3: "Moderate",
-    4: "Poor",
-    5: "Very Poor",
-    6: "Extremely Poor",
 }
