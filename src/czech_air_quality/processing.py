@@ -227,7 +227,7 @@ class AirQualityCalculations:
         return False
 
 
-    def _calculate_e_aqi_subindex(self, pollutant_code: str, concentration: float) -> int:
+    def _calculate_e_aqi_subindex(self, pollutant_code: str, concentration: float | None) -> int:
         """
         Calculate EAQI sub-index for a pollutant
 
