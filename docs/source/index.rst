@@ -1,6 +1,10 @@
 Czech_air_quality documentation
 ================================
 
+.. meta::
+   :description: Documentation of the czech_air_quality python library.
+   :keywords: air-quality, aq, aqi, chmi, chmu, czech, eaqi, isko, library, opendata, python
+
 A python library for retrieving and parsing air quality data from the CHMI opendata portal.
 
 .. toctree::
