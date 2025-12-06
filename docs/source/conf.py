@@ -1,5 +1,4 @@
 import sys
-from importlib.metadata import version
 from pathlib import Path
 
 project_root = Path(__file__).parent.parent.parent
@@ -8,8 +7,7 @@ sys.path.insert(0, str(project_root / "src"))
 project = "czech_air_quality"
 copyright = "chickendrop89, 2025"
 author = "chickendrop89"
-release = version("czech_air_quality")
-
+release = "1.0.1"
 
 extensions = [
     "sphinx.ext.autodoc",
