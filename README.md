@@ -1,12 +1,11 @@
 # czech_air_quality
 This library provides a python client for simply retrieving and processing air quality data from the CHMI `OpenData` portal, that provides data hourly.
 
-It also contains the optional logic for automatically picking closest weather station to a location via `Nominatim`, automatically fetching multiple close stations to get measurements of all pollutants, fallback mechanisms, caching, and a `EAQI` calculation
+It also contains the optional logic for automatically picking closest weather station to a location via `Nominatim`, automatically fetching multiple close stations to get measurements of all pollutants, caching, and a `EAQI` calculation
 
 ![PyPI - Version](https://img.shields.io/pypi/v/czech_air_quality?logo=python&logoColor=white) ![PyPI - Downloads](https://img.shields.io/pypi/dm/czech_air_quality?logo=python&logoColor=white) ![PyPI - Typing](https://img.shields.io/pypi/types/czech_air_quality?logo=python&logoColor=white)
 
 ## Table of Contents
-
 1. [Installation](#installation)
 2. [Quick Start](#quick-start)
 3. [Public Methods](#public-methods)
@@ -18,7 +17,6 @@ It also contains the optional logic for automatically picking closest weather st
 ---
 
 ## Installation
-
 ```bash
 pip install czech_air_quality
 ```
@@ -32,15 +30,12 @@ pip install czech_air_quality
 
 ## Quick Start
 ```python
-from czech_air_quality import AirQuality, StationNotFoundError
+from czech_air_quality import AirQuality
 
 client = AirQuality()
-
-try:
-    aqi = client.get_air_quality_index("Prague")
-    print("Air Quality Index:", aqi)
-except StationNotFoundError as e:
-    print("Error:", e)
+aqi = client.get_air_quality_index("Prague")
+print("AQI level:", aqi)
+# Output: "AQI level: 3"
 ```
 
 ---
@@ -66,25 +61,22 @@ print("Total stations:", len(stations))
 print("First 5 stations:")
 for station in stations[:5]:
     print("-", station)
-```
 
-**Output:**
-```
-Total stations: 41
-First 5 stations:
-- Ostrava-Fifejdy
-- Frýdek-Místek
-- Beroun
-- Třinec-Kosmos
-- Bělotín
+# Output:
+# Total stations: 41
+# First 5 stations:
+# - Ostrava-Fifejdy
+# - Frýdek-Místek
+# - Beroun
+# - Třinec-Kosmos
+# - Bělotín
 ```
 
 ---
 
 ### Instance Properties
-
 #### `actualized_time`
-Timestamp when the data was last updated by the CHMI source.
+Timestamp when the data was last updated by the `CHMI` source.
 
 ```python
 @property
@@ -98,19 +90,11 @@ def actualized_time() -> datetime
 ```python
 client = AirQuality()
 print("Data last updated:", client.actualized_time)
+# Output: Data last updated: 2025-11-16 21:37:37.612407+00:00
 ```
-
-**Output:**
-```
-Data last updated: 2025-11-16 21:37:37.612407+00:00
-```
-
----
 
 #### `is_data_fresh`
-
 Check if cached data is still valid via ETag validation.
-
 ```python
 @property
 def is_data_fresh() -> bool
@@ -119,30 +103,18 @@ def is_data_fresh() -> bool
 **Returns:**
 - `bool` - `True` if cached data is current; `False` if needs refresh
 
-**Details:**
-- Performs conditional GET requests using the `If-None-Match` header
-- Returns `304 Not Modified` for unchanged data
-- Only downloads full files when data has been modified
-- Always returns `True` if caching is disabled
-
 **Example:**
 ```python
 client = AirQuality()
 if client.is_data_fresh:
     print("Using cached data")
 else:
-    print("Cache is stale, downloading fresh data...")
-```
-
-**Output:**
-```
-Using cached data
+    print("Cache is stale")
 ```
 
 ---
 
 ### Instance Methods
-
 #### `find_nearest_station(city_name)`
 Find the air quality station nearest to a specified city.
 
@@ -164,61 +136,15 @@ def find_nearest_station(city_name: str) -> tuple[dict, float]
 **Example:**
 ```python
 client = AirQuality()
+station, distance = client.find_nearest_station("Prague")
 
-try:
-    station, distance = client.find_nearest_station("Prague")
-    print("Nearest station:", station["Name"])
-    print("Distance:", distance, "km")
-except StationNotFoundError as e:
-    print("Error:", e)
+print("Nearest station:", station["Name"])
+print("Distance:", distance, "km")
+
+# Output:
+# Nearest station: Praha 1-n. Republiky
+# Distance: 0.45 km
 ```
-
-**Output:**
-```
-Nearest station: Praha 1-n. Republiky
-Distance: 0.45 km
-```
-
----
-
-#### `get_city_coordinates(city_name)`
-Get geographic coordinates for a city.
-
-```python
-def get_city_coordinates(city_name: str) -> tuple[float, float] | None
-```
-
-**Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `city_name` | `str` | Name of the city |
-
-**Returns:**
-- `tuple[float, float]` - `(latitude, longitude)` coordinates
-- `None` - If geocoding fails
-
-**Details:**
-- Checks local cache first
-- Falls back to Nominatim geocoding for Czech cities
-- Rate-limited to 1 request/second
-
-**Example:**
-```python
-coords = client.get_city_coordinates("Brno")
-if coords:
-    lat, lon = coords
-    print("Brno coordinates:", lat, lon)
-else:
-    print("Could not find coordinates")
-```
-
-**Output:**
-```
-Brno coordinates: 49.1950 16.6068
-```
-
----
 
 #### `get_air_quality_index(city_name)`
 Get the overall EAQI for the nearest station to a city.
@@ -234,13 +160,11 @@ def get_air_quality_index(city_name: str) -> int
 | `city_name` | `str` | Name of the city |
 
 **Returns:**
-- `int` - EAQI level (0-6): 0=Error/N/A, 1=Good, 2=Fair, 3=Moderate, 4=Poor, 5=Very Poor, 6=Extremely Poor
+- `int` - EAQI level (0-6)
 
 **Details:**
-- EAQI is the maximum sub-index across all reported pollutants
-- Supports: PM10, PM2.5, O3, NO2, SO2
-- Ignores invalid or missing measurements
-- Uses the official EAQI 0-6 scale
+- Returns the highest sub-index across all measured pollutants
+- Supports PM10, PM2.5, O3, NO2, SO2
 
 **EAQI Scale (0-6):**
 | Level | Description |
@@ -262,74 +186,19 @@ if aqi == 1:
     status = "Good"
 elif aqi == 2:
     status = "Fair"
-elif aqi == 3:
-    status = "Moderate"
-elif aqi == 4:
-    status = "Poor"
-elif aqi == 5:
-    status = "Very Poor"
-elif aqi == 6:
-    status = "Extremely Poor"
+# ...etc
 else:
     status = "Error/No data"
 
 print("Status:", status)
+
+# Output:
+# Air Quality Index for Ostrava: 2
+# Status: Fair
 ```
-
-**Output:**
-```
-Air Quality Index for Ostrava: 4
-Status: Poor
-```
-
----
-
-#### `get_station_capabilities(city_name)`
-Get the list of pollutants measured by the nearest station to a city.
-
-```python
-def get_station_capabilities(city_name: str) -> list[str | None]
-```
-
-**Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `city_name` | `str` | Name of the city |
-
-**Returns:**
-- `list[str]` - List of pollutant codes measured at this station
-
-**Raises:**
-- `StationNotFoundError` - If station not found
-
-**Supported Pollutants:**
-- `PM10` - Particulate matter (diameter < 10 µm)
-- `PM2.5` - Fine particulate matter (diameter < 2.5 µm)
-- `O3` - Ozone
-- `NO2` - Nitrogen dioxide
-- `SO2` - Sulfur dioxide
-
-**Example:**
-```python
-capabilities = client.get_station_capabilities("Prague")
-print("Measured pollutants in Prague:")
-for pollutant in capabilities:
-    print("-", pollutant)
-```
-
-**Output:**
-```
-Measured pollutants in Prague:
-- PM10
-- PM2.5
-- O3
-- NO2
-```
-
----
 
 #### `get_air_quality_report(city_name)`
-Get a comprehensive air quality report with EAQI for the nearest station.
+Get a comprehensive air quality report for the nearest station.
 
 ```python
 def get_air_quality_report(city_name: str) -> dict
@@ -342,12 +211,6 @@ def get_air_quality_report(city_name: str) -> dict
 
 **Returns:**
 - `dict` - Comprehensive report dictionary (see [Air Quality Report](#air-quality-report))
-
-**Details:**
-- Returns error information if station not found
-- Includes station metadata, distance, EAQI, and measurements
-- Each measurement includes value, unit, status, and sub-AQI
-- EAQI is the maximum sub-index across all pollutants
 
 **Example:**
 ```python
@@ -366,23 +229,18 @@ else:
     for meas in report["measurements"]:
         if meas["sub_aqi"] > 0:
             print("-", meas["pollutant_code"] + ":", meas["formatted_measurement"])
-```
 
-**Output:**
+# Station: Brno-Dětská nemocnice
+# Region: Jihomoravský
+# Distance: 0.00 km
+# Overall AQI: 4
+# Status: Poor
+# 
+# Top pollutants:
+# - PM10: 48 µg/m³
+# - O3: 35 ppb
+# ...
 ```
-Station: Brno-Dětská nemocnice
-Region: Jihomoravský
-Distance: 0.00 km
-Overall AQI: 52
-Status: Fair
-
-Top pollutants:
-- PM10: 48 µg/m³
-- O3: 35 ppb
-...
-```
-
----
 
 #### `get_pollutant_measurement(city_name, pollutant_code)`
 Get detailed measurement data for a specific pollutant at the nearest station.
@@ -416,21 +274,16 @@ try:
     print("Status:", measurement["measurement_status"])
 except PollutantNotReportedError as e:
     print("Error:", e)
-```
 
-**Output:**
+# City: Ostrava
+# Station: Ostrava-Fifejdy
+# Pollutant: PM10
+# Value: 52 µg/m³
+# Status: Measured
 ```
-City: Ostrava
-Station: Ostrava-Fifejdy
-Pollutant: PM10
-Value: 52 µg/m³
-Status: Measured
-```
-
----
 
 #### `force_fetch_fresh()`
-Force fetching fresh data from the source without waiting for the 20-minute cache timer.
+Force fetching fresh data from the source without waiting for the internal cache timer to expire.
 
 ```python
 def force_fetch_fresh() -> None
@@ -439,17 +292,10 @@ def force_fetch_fresh() -> None
 **Behavior:**
 - Bypasses the normal 20-minute cache timeout
 - Still uses cached data if server returns 304 (Not Modified) via ETag
-- Downloads fresh data if server indicates changes
 - Raises `DataDownloadError` if download fails and no cache is available
-
-**Details:**
-- Useful when you need fresh data before the automatic refresh
-- Still respects ETag validation to avoid unnecessary downloads
-- Does not disable caching - updates the cache with new data
 
 **Example:**
 ```python
-client = AirQuality()
 print("Using potentially cached data")
 report1 = client.get_air_quality_report("Prague")
 
@@ -462,15 +308,6 @@ report2 = client.get_air_quality_report("Prague")
 ---
 
 ## Exception Classes
-
-### AirQualityError
-Base exception for the library, all exceptions inherit from this.
-
-```python
-class AirQualityError(Exception):
-    """Base exception for the czech_air_quality library."""
-```
-
 ### DataDownloadError
 Raised when data cannot be downloaded or is invalid.
 
@@ -481,9 +318,8 @@ class DataDownloadError(AirQualityError):
 
 **Common Causes:**
 - Network connectivity issues
-- Server returns invalid JSON or CSV
-- HTTP errors (5xx responses)
-- Timeout during download
+- Server returned invalid `JSON` or `CSV`
+- `HTTP` error or timeout during download
 
 ### StationNotFoundError
 Raised when a city or station cannot be found.
@@ -506,8 +342,9 @@ class PollutantNotReportedError(AirQualityError):
 ```
 
 **Common Causes:**
-- Station lacks equipment to measure the pollutant
-- Measurement data temporarily unavailable
+- When using `get_pollutant_measurement()`
+    - If `use_nominatim=True` and all `neighbour_station_limit=20` stations near a city don't report the requested pollutant
+    - If `use_nominatim=False` and an exact station doesn't report requested pollutant
 
 ### CacheError
 Raised when there is an error related to caching data.
@@ -539,12 +376,13 @@ except PollutantNotReportedError as e:
     print("Pollutant error:", e)
 except DataDownloadError as e:
     print("Download error:", e)
+
+# Output: "Pollutant error: ..."
 ```
 
 ---
 
 ## Data Structures
-
 ### Air Quality Report
 Dictionary returned by `get_air_quality_report()`:
 
@@ -623,12 +461,22 @@ print("Distance:", distance, "km")
 aqi = client.get_air_quality_index("Prague")
 print("AQI:", aqi)
 
-if aqi <= 25:
-    print("Air quality is GOOD")
-elif aqi <= 50:
-    print("Air quality is FAIR")
+if aqi == 1:
+    status = "Good"
+elif aqi == 2:
+    status = "Fair"
+elif aqi == 3:
+    status = "Moderate"
+elif aqi == 4:
+    status = "Poor"
+elif aqi == 5:
+    status = "Very Poor"
+elif aqi == 6:
+    status = "Extremely Poor"
 else:
-    print("Air quality is POOR")
+    status = "Error/No data"
+
+print("AQI description:", status)
 ```
 
 ### Example 4: Get Full Report
@@ -644,7 +492,7 @@ for measurement in report["measurements"]:
     print(code + ":", value)
 ```
 
-### Example 5: Monitor Specific Pollutant
+### Example 5: Single Pollutant
 ```python
 pm10 = client.get_pollutant_measurement("Ostrava", "PM10")
 
@@ -654,7 +502,7 @@ print("Value:", pm10["formatted_measurement"])
 print("Status:", pm10["measurement_status"])
 ```
 
-### Example 6: List All Stations
+### Example 6: List Stations
 ```python
 stations = AirQuality.get_all_station_names()
 
@@ -675,73 +523,37 @@ for station in stations:
 ```
 
 ### Example 8: Using Exact Station Names (No Nominatim)
-
 ```python
-from czech_air_quality import AirQuality
-
 client = AirQuality(use_nominatim=False)
-
-station, distance = client.find_nearest_station("Ostrava-Fifejdy")
-print("Station:", station["Name"])
-print("Distance:", distance, "km")
-
-report = client.get_air_quality_report("Brno-Tuřany")
-print("AQI:", report["air_quality_index_code"])
+report = client.get_air_quality_report("Ostrava-Fifejdy")
+print(f"AQI: {report['air_quality_index_code']}")
 ```
 
-**Output:**
-```
-Station: Ostrava-Fifejdy
-Distance: 0.0 km
-AQI: 45
-```
-
-**Note:** This approach requires knowing exact station names. Use `AirQuality.get_all_station_names()` to list all available stations.
+**Note:** This approach requires knowing exact station names.
+Use `get_all_station_names()` to list all available stations.
 
 ### Example 9: Error Handling
 ```python
-from czech_air_quality import (
-    AirQuality,
-    StationNotFoundError,
-    PollutantNotReportedError
-)
-
-client = AirQuality()
+from czech_air_quality import AirQuality, StationNotFoundError
 
 try:
-    report = client.get_air_quality_report("Unknown City")
-    if "Error" in report:
-        print("Error:", report["Error"])
-except StationNotFoundError as e:
-    print("Station not found:", e)
+    report = client.get_air_quality_report("Unknown")
+except StationNotFoundError:
+    print("City not found")
 ```
 
 ---
 
 ## Configuration
-
 ### Logging
-Enable detailed logging to track operations:
+Logging of the library debugging details
 ```python
 import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("czech_air_quality")
-logger.setLevel(logging.DEBUG)
-
-from czech_air_quality import AirQuality
-client = AirQuality()
+logging.getLogger("czech_air_quality").setLevel(logging.DEBUG)
 ```
-
-**Log Levels:**
-- `DEBUG` - Detailed operational information
-- `INFO` - Major operations (cache hits, geocoding, data loads)
-- `WARNING` - Warnings (failed geocoding, invalid values)
-- `ERROR` - Errors (download failures, missing stations)
 
 ### Timeouts
 Adjust HTTP and geocoding timeouts:
-
 ```python
 client = AirQuality(
     request_timeout=30,
@@ -774,11 +586,6 @@ The library implements a freshness check:
 3. **Network Error:** If network unavailable but cache exists, use stale cache with warning
 4. **Force Refresh:** `force_fetch_fresh()` bypasses age check but respects ETags
 
-Cache files are stored in system temporary directory:
-- **File:** `airquality_opendata_cache.json`
-- **Location:** `tempfile.gettempdir()` (typically `/tmp/` on Linux, `%TEMP%` on Windows)
-- **Contents:** Combined metadata, CSV data, and ETags
-
 ### Nominatim Geocoding
 Control whether to use Nominatim for city name lookups:
 
@@ -797,7 +604,7 @@ report = client.get_air_quality_report("Praha 1-n. Republiky")
 - `use_nominatim=False`: Only accepts exact station names from the network; no geocoding needed
 
 ### Region Filtering
-Limit results to specific Czech regions:
+Limit results to specific regions:
 ```python
 regions = [
     "Jihomoravský",
@@ -821,12 +628,8 @@ client = AirQuality(region_filter="jihomoravský")
 
 ---
 
-## API Data Source
-Data is retrieved from the Czech Hydrometeorological Institute (CHMI) OpenData portal:
+## Data Source
+Data from CHMI (Czech Hydrometeorological Institute) OpenData portal, updated hourly.
 
-- **Metadata:** https://opendata.chmi.cz/air_quality/now/metadata/metadata.json
-- **Measurements:** https://opendata.chmi.cz/air_quality/now/data/airquality_1h_avg_CZ.csv
-
-**Update Frequency:** The documentation states the update frequency is 1 hour
-
-**License:** Data subject to CHMI OpenData terms of service
+- Metadata: https://opendata.chmi.cz/air_quality/now/metadata/metadata.json
+- Measurements: https://opendata.chmi.cz/air_quality/now/data/airquality_1h_avg_CZ.csv
