@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://czech-air-quality.readthedocs.io/en/latest/custom_sitemap.xml
