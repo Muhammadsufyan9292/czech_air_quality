@@ -44,6 +44,9 @@ REQUEST_HEADERS = {
 # Value that is X or above will be accepted
 CHMI_ERROR_THRESHOLD = 1.1
 
+# Maximum number of neighbour stations to merge pollutants from
+CHMI_NEIGHBOUR_LIMIT = 20
+
 EAQI_BANDS = {
     # EAQI Standard 0-6 Scale
     # Concentration breakpoints (µg/m³) and the corresponding EAQI level (1-6)

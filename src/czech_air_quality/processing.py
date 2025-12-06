@@ -40,6 +40,7 @@ class AirQualityCalculations:
         self._data_manager: DataManager
         self._region_filter: str | None
         self._use_nominatim: bool
+        self._neighbour_station_limit: int
         self._nominatim_timeout: int
         self._data: dict
         self._all_stations: list[dict]
@@ -136,7 +137,7 @@ class AirQualityCalculations:
 
 
     def _get_nearby_stations_sorted(self, city_name: str,
-            limit: int = 5) -> list[tuple[dict, float]]:
+            limit: int | None = None) -> list[tuple[dict, float]]:
         """
         Get a list of nearby stations sorted by distance.
 
@@ -145,12 +146,15 @@ class AirQualityCalculations:
         :param city_name: City name to search for
         :type city_name: str
         :param limit: Maximum number of stations to return
-        :type limit: int
+        :type limit: int | None
         :return: List of (station_dict, distance_km) tuples sorted by distance
         :rtype: list[tuple[dict, float]]
         """
         city_name_lower = city_name.lower()
         stations_with_distance = []
+
+        if limit is None:
+            limit = self._neighbour_station_limit
 
         for station in self._all_stations:
             if city_name_lower in station["Name"].lower():
@@ -322,7 +326,7 @@ class AirQualityCalculations:
         :rtype: int
         """
         station_data, _ = self._get_nearest_station_to_city(city_name)
-        nearby_stations = self._get_nearby_stations_sorted(city_name, limit=15)
+        nearby_stations = self._get_nearby_stations_sorted(city_name)
         measurements = self._get_station_measurements(station_data)
 
         max_aqi = 0
@@ -449,7 +453,7 @@ class AirQualityCalculations:
         :rtype: Tuple[dict, float]
         :raises StationNotFoundError: If city or nearby stations not found
         """
-        nearby_station = self._get_nearby_stations_sorted(city_name, limit=1)
+        nearby_station = self._get_nearby_stations_sorted(city_name, 1)
 
         if nearby_station:
             station, distance = nearby_station[0]
@@ -487,7 +491,7 @@ class AirQualityCalculations:
         """
         overall_aqi_value = self._get_aqi(city_searched)
         measurements_list = self._get_station_measurements(station_data)
-        nearby_stations = self._get_nearby_stations_sorted(city_searched, limit=15)
+        nearby_stations = self._get_nearby_stations_sorted(city_searched)
 
         measurements = []
         stations_used = [station_data.get("Name", "")]

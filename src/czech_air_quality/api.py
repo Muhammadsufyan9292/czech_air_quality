@@ -44,6 +44,7 @@ class AirQuality(AirQualityCalculations):
         auto_load=True,
         region_filter=None,
         use_nominatim=True,
+        neighbour_station_limit=const.CHMI_NEIGHBOUR_LIMIT,
         nominatim_timeout=const.NOMINATIM_TIMEOUT,
         request_timeout=const.REQUEST_TIMEOUT,
         disable_caching=False
@@ -58,6 +59,8 @@ class AirQuality(AirQualityCalculations):
         :param use_nominatim: If True, enable Nominatim geocoding for city name lookups.
                              If False, only exact station name matches are accepted.
         :type use_nominatim: bool
+        :param neighbour_station_limit: Maximum number of close neighbouring stations to merge pollutants from.
+        :type neighbour_station_limit: int
         :param nominatim_timeout: Timeout in seconds for Nominatim geocoding requests
         :type nominatim_timeout: int
         :param request_timeout: Timeout in seconds for CHMI data download requests
@@ -80,6 +83,7 @@ class AirQuality(AirQualityCalculations):
         )
 
         self._use_nominatim = use_nominatim
+        self._neighbour_station_limit = neighbour_station_limit
         self._nominatim_timeout = nominatim_timeout
 
         if self._use_nominatim:
@@ -242,7 +246,7 @@ class AirQuality(AirQualityCalculations):
                 "Station %s has no valid data. Attempting to find alternative station...",
                 station_data.get("Name"),
             )
-            nearby_stations = self._get_nearby_stations_sorted(city_name, limit=5)
+            nearby_stations = self._get_nearby_stations_sorted(city_name)
 
             for alt_station, alt_distance in nearby_stations[1:]:
                 if self._station_has_valid_data(alt_station):
@@ -286,7 +290,7 @@ class AirQuality(AirQualityCalculations):
         :raises StationNotFoundError: If city not found or no nearby stations exist
         :raises PollutantNotReportedError: If pollutant is not measured at any station
         """
-        nearby_stations = self._get_nearby_stations_sorted(city_name, limit=10)
+        nearby_stations = self._get_nearby_stations_sorted(city_name)
         station_data, _ = self._get_nearest_station_to_city(city_name)
 
         pollutant_code_upper = pollutant_code.upper()
