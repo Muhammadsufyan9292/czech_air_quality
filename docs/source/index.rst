@@ -1,4 +1,4 @@
-Czech_air_quality documentation
+czech_air_quality documentation
 ================================
 
 .. meta::
